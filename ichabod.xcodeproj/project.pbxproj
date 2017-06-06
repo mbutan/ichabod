@@ -1,0 +1,355 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D448425D1EE0AE38005038E5 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D448425C1EE0AE38005038E5 /* main.c */; };
+		D44842661EE0AEEF005038E5 /* libMagickWand-7.Q16HDRI.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842641EE0AEEF005038E5 /* libMagickWand-7.Q16HDRI.0.dylib */; };
+		D44842671EE0AEEF005038E5 /* libavcodec.57.64.101.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842651EE0AEEF005038E5 /* libavcodec.57.64.101.dylib */; };
+		D448426C1EE0AF0C005038E5 /* libavutil.55.34.101.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842681EE0AF0C005038E5 /* libavutil.55.34.101.dylib */; };
+		D448426D1EE0AF0C005038E5 /* libpostproc.54.1.100.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842691EE0AF0C005038E5 /* libpostproc.54.1.100.dylib */; };
+		D448426E1EE0AF0C005038E5 /* libavfilter.6.65.100.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D448426A1EE0AF0C005038E5 /* libavfilter.6.65.100.dylib */; };
+		D448426F1EE0AF0C005038E5 /* libavformat.57.56.101.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D448426B1EE0AF0C005038E5 /* libavformat.57.56.101.dylib */; };
+		D44842721EE0AF2E005038E5 /* libzmq.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842701EE0AF2E005038E5 /* libzmq.5.dylib */; };
+		D44842731EE0AF2E005038E5 /* libuv.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842711EE0AF2E005038E5 /* libuv.1.dylib */; };
+		D44842761EE0AF5F005038E5 /* libopus.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842741EE0AF5F005038E5 /* libopus.0.dylib */; };
+		D44842771EE0AF5F005038E5 /* libx264.144.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842751EE0AF5F005038E5 /* libx264.144.dylib */; };
+		D448427A1EE0AFA6005038E5 /* file_writer.c in Sources */ = {isa = PBXBuildFile; fileRef = D44842781EE0AFA6005038E5 /* file_writer.c */; };
+		D448427D1EE0B03E005038E5 /* frame_generator.c in Sources */ = {isa = PBXBuildFile; fileRef = D448427B1EE0B03E005038E5 /* frame_generator.c */; };
+		D44842801EE0B094005038E5 /* media_queue.cc in Sources */ = {isa = PBXBuildFile; fileRef = D448427E1EE0B094005038E5 /* media_queue.cc */; };
+		D44842861EE1DFEA005038E5 /* base64.c in Sources */ = {isa = PBXBuildFile; fileRef = D44842841EE1DFEA005038E5 /* base64.c */; };
+		D44842891EE1E323005038E5 /* yuv_rgb.c in Sources */ = {isa = PBXBuildFile; fileRef = D44842871EE1E323005038E5 /* yuv_rgb.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D44842571EE0AE38005038E5 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		D44842591EE0AE38005038E5 /* ichabod */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ichabod; sourceTree = BUILT_PRODUCTS_DIR; };
+		D448425C1EE0AE38005038E5 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		D44842641EE0AEEF005038E5 /* libMagickWand-7.Q16HDRI.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libMagickWand-7.Q16HDRI.0.dylib"; path = "../../../../usr/local/lib/libMagickWand-7.Q16HDRI.0.dylib"; sourceTree = "<group>"; };
+		D44842651EE0AEEF005038E5 /* libavcodec.57.64.101.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavcodec.57.64.101.dylib; path = ../../../../usr/local/lib/libavcodec.57.64.101.dylib; sourceTree = "<group>"; };
+		D44842681EE0AF0C005038E5 /* libavutil.55.34.101.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavutil.55.34.101.dylib; path = ../../../../usr/local/lib/libavutil.55.34.101.dylib; sourceTree = "<group>"; };
+		D44842691EE0AF0C005038E5 /* libpostproc.54.1.100.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpostproc.54.1.100.dylib; path = ../../../../usr/local/lib/libpostproc.54.1.100.dylib; sourceTree = "<group>"; };
+		D448426A1EE0AF0C005038E5 /* libavfilter.6.65.100.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavfilter.6.65.100.dylib; path = ../../../../usr/local/lib/libavfilter.6.65.100.dylib; sourceTree = "<group>"; };
+		D448426B1EE0AF0C005038E5 /* libavformat.57.56.101.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavformat.57.56.101.dylib; path = ../../../../usr/local/lib/libavformat.57.56.101.dylib; sourceTree = "<group>"; };
+		D44842701EE0AF2E005038E5 /* libzmq.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libzmq.5.dylib; path = ../../../../usr/local/lib/libzmq.5.dylib; sourceTree = "<group>"; };
+		D44842711EE0AF2E005038E5 /* libuv.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libuv.1.dylib; path = ../../../../usr/local/Cellar/libuv/1.11.0/lib/libuv.1.dylib; sourceTree = "<group>"; };
+		D44842741EE0AF5F005038E5 /* libopus.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopus.0.dylib; path = ../../../../usr/local/Cellar/opus/1.1.4/lib/libopus.0.dylib; sourceTree = "<group>"; };
+		D44842751EE0AF5F005038E5 /* libx264.144.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libx264.144.dylib; path = ../../../../usr/local/Cellar/x264/r2533/lib/libx264.144.dylib; sourceTree = "<group>"; };
+		D44842781EE0AFA6005038E5 /* file_writer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = file_writer.c; sourceTree = "<group>"; };
+		D44842791EE0AFA6005038E5 /* file_writer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = file_writer.h; sourceTree = "<group>"; };
+		D448427B1EE0B03E005038E5 /* frame_generator.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = frame_generator.c; sourceTree = "<group>"; };
+		D448427C1EE0B03E005038E5 /* frame_generator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = frame_generator.h; sourceTree = "<group>"; };
+		D448427E1EE0B094005038E5 /* media_queue.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = media_queue.cc; sourceTree = "<group>"; };
+		D448427F1EE0B094005038E5 /* media_queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = media_queue.h; sourceTree = "<group>"; };
+		D44842841EE1DFEA005038E5 /* base64.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = base64.c; sourceTree = "<group>"; };
+		D44842851EE1DFEA005038E5 /* base64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = base64.h; sourceTree = "<group>"; };
+		D44842871EE1E323005038E5 /* yuv_rgb.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = yuv_rgb.c; sourceTree = "<group>"; };
+		D44842881EE1E323005038E5 /* yuv_rgb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = yuv_rgb.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D44842561EE0AE38005038E5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D44842761EE0AF5F005038E5 /* libopus.0.dylib in Frameworks */,
+				D44842771EE0AF5F005038E5 /* libx264.144.dylib in Frameworks */,
+				D44842721EE0AF2E005038E5 /* libzmq.5.dylib in Frameworks */,
+				D44842731EE0AF2E005038E5 /* libuv.1.dylib in Frameworks */,
+				D448426C1EE0AF0C005038E5 /* libavutil.55.34.101.dylib in Frameworks */,
+				D448426D1EE0AF0C005038E5 /* libpostproc.54.1.100.dylib in Frameworks */,
+				D448426E1EE0AF0C005038E5 /* libavfilter.6.65.100.dylib in Frameworks */,
+				D448426F1EE0AF0C005038E5 /* libavformat.57.56.101.dylib in Frameworks */,
+				D44842661EE0AEEF005038E5 /* libMagickWand-7.Q16HDRI.0.dylib in Frameworks */,
+				D44842671EE0AEEF005038E5 /* libavcodec.57.64.101.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D44842501EE0AE38005038E5 = {
+			isa = PBXGroup;
+			children = (
+				D448425B1EE0AE38005038E5 /* ichabod */,
+				D448425A1EE0AE38005038E5 /* Products */,
+				D44842631EE0AEEE005038E5 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		D448425A1EE0AE38005038E5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D44842591EE0AE38005038E5 /* ichabod */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D448425B1EE0AE38005038E5 /* ichabod */ = {
+			isa = PBXGroup;
+			children = (
+				D448425C1EE0AE38005038E5 /* main.c */,
+				D44842791EE0AFA6005038E5 /* file_writer.h */,
+				D44842781EE0AFA6005038E5 /* file_writer.c */,
+				D448427B1EE0B03E005038E5 /* frame_generator.c */,
+				D448427C1EE0B03E005038E5 /* frame_generator.h */,
+				D448427E1EE0B094005038E5 /* media_queue.cc */,
+				D448427F1EE0B094005038E5 /* media_queue.h */,
+				D44842841EE1DFEA005038E5 /* base64.c */,
+				D44842851EE1DFEA005038E5 /* base64.h */,
+				D44842871EE1E323005038E5 /* yuv_rgb.c */,
+				D44842881EE1E323005038E5 /* yuv_rgb.h */,
+			);
+			path = ichabod;
+			sourceTree = "<group>";
+		};
+		D44842631EE0AEEE005038E5 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D44842741EE0AF5F005038E5 /* libopus.0.dylib */,
+				D44842751EE0AF5F005038E5 /* libx264.144.dylib */,
+				D44842701EE0AF2E005038E5 /* libzmq.5.dylib */,
+				D44842711EE0AF2E005038E5 /* libuv.1.dylib */,
+				D44842681EE0AF0C005038E5 /* libavutil.55.34.101.dylib */,
+				D44842691EE0AF0C005038E5 /* libpostproc.54.1.100.dylib */,
+				D448426A1EE0AF0C005038E5 /* libavfilter.6.65.100.dylib */,
+				D448426B1EE0AF0C005038E5 /* libavformat.57.56.101.dylib */,
+				D44842641EE0AEEF005038E5 /* libMagickWand-7.Q16HDRI.0.dylib */,
+				D44842651EE0AEEF005038E5 /* libavcodec.57.64.101.dylib */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D44842581EE0AE38005038E5 /* ichabod */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D44842601EE0AE38005038E5 /* Build configuration list for PBXNativeTarget "ichabod" */;
+			buildPhases = (
+				D44842551EE0AE38005038E5 /* Sources */,
+				D44842561EE0AE38005038E5 /* Frameworks */,
+				D44842571EE0AE38005038E5 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ichabod;
+			productName = ichabod;
+			productReference = D44842591EE0AE38005038E5 /* ichabod */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D44842511EE0AE38005038E5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0830;
+				ORGANIZATIONNAME = "Charley Robinson";
+				TargetAttributes = {
+					D44842581EE0AE38005038E5 = {
+						CreatedOnToolsVersion = 8.3.2;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = D44842541EE0AE38005038E5 /* Build configuration list for PBXProject "ichabod" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = D44842501EE0AE38005038E5;
+			productRefGroup = D448425A1EE0AE38005038E5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D44842581EE0AE38005038E5 /* ichabod */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D44842551EE0AE38005038E5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D44842891EE1E323005038E5 /* yuv_rgb.c in Sources */,
+				D44842861EE1DFEA005038E5 /* base64.c in Sources */,
+				D448427D1EE0B03E005038E5 /* frame_generator.c in Sources */,
+				D448427A1EE0AFA6005038E5 /* file_writer.c in Sources */,
+				D44842801EE0B094005038E5 /* media_queue.cc in Sources */,
+				D448425D1EE0AE38005038E5 /* main.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D448425E1EE0AE38005038E5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include,
+					"/usr/local/include/ImageMagick-7",
+				);
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		D448425F1EE0AE38005038E5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include,
+					"/usr/local/include/ImageMagick-7",
+				);
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D44842611EE0AE38005038E5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/libuv/1.11.0/lib,
+					/usr/local/Cellar/opus/1.1.4/lib,
+					/usr/local/Cellar/x264/r2533/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		D44842621EE0AE38005038E5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/libuv/1.11.0/lib,
+					/usr/local/Cellar/opus/1.1.4/lib,
+					/usr/local/Cellar/x264/r2533/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D44842541EE0AE38005038E5 /* Build configuration list for PBXProject "ichabod" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D448425E1EE0AE38005038E5 /* Debug */,
+				D448425F1EE0AE38005038E5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D44842601EE0AE38005038E5 /* Build configuration list for PBXNativeTarget "ichabod" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D44842611EE0AE38005038E5 /* Debug */,
+				D44842621EE0AE38005038E5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D44842511EE0AE38005038E5 /* Project object */;
+}
