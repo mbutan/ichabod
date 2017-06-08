@@ -17,14 +17,24 @@ int main(int argc, const char * argv[]) {
   avfilter_register_all();
   MagickWandGenesis();
   struct media_queue_s* queue;
-  int ret = media_queue_alloc(&queue);
+  // todo: pass this in from horseman
+  struct file_writer_t* file_writer;
+  int ret = file_writer_alloc(&file_writer);
+  ret = file_writer_open(file_writer, "output.mp4", 1280, 720);
+  if (ret) {
+    printf("unable to open output file\n");
+    return ret;
+  }
+  struct media_queue_config_s config;
+  config.format = file_writer->format_ctx_out;
+  config.audio = file_writer->audio_ctx_out;
+  config.video = file_writer->video_ctx_out;
+  ret = media_queue_create(&queue, &config);
   if (ret) {
     printf("could not allocate media queue\n");
     return ret;
   }
   media_queue_start(queue);
-  struct file_writer_t* file_writer;
-  file_writer_alloc(&file_writer);
   int64_t init_ts = 0;
   int64_t frames_written = 0;
   while (frames_written < 300) {
@@ -36,9 +46,6 @@ int main(int argc, const char * argv[]) {
         break;
       }
       if (!init_ts) {
-        file_writer_open(file_writer, "output.mp4",
-                         frame->width,
-                         frame->height);
         init_ts = frame->pts;
       }
       frame->pts -= init_ts;
@@ -47,7 +54,8 @@ int main(int argc, const char * argv[]) {
       av_frame_free(&frame);
       frames_written++;
     }
-    usleep(1);
+    // TODO: move this to an epoll or similar
+    usleep(10000);
   }
 
   file_writer_close(file_writer);
