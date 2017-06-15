@@ -69,6 +69,20 @@ static int open_file_stream(struct audio_source_s* pthis)
   return ret;
 }
 
+// Since we'll hit EOF many times during the life of this source, play the
+// conservative route and reopen everything each time we revisit the stream,
+// then seek to the last known position if possible.
+static int reopen_file_stream(struct audio_source_s* pthis) {
+  if (pthis->format_context) {
+    avformat_close_input(&pthis->format_context);
+    // codec context is quietly freed by the previous statement,
+    // so we just treat our ref as a weak reference.
+    pthis->codec_context = NULL;
+  }
+  int ret = open_file_stream(pthis);
+  return ret;
+}
+
 void audio_source_alloc(struct audio_source_s** audio_source_out) {
   struct audio_source_s* pthis =
   (struct audio_source_s*)calloc(1, sizeof(struct audio_source_s));
@@ -76,10 +90,7 @@ void audio_source_alloc(struct audio_source_s** audio_source_out) {
 }
 
 void audio_source_free(struct audio_source_s* pthis) {
-  avcodec_close(pthis->codec_context);
   avformat_close_input(&pthis->format_context);
-  avformat_free_context(pthis->format_context);
-  avcodec_free_context(&pthis->codec_context);
   free(pthis);
 }
 
@@ -88,6 +99,7 @@ int audio_source_load_config(struct audio_source_s* pthis,
 {
   pthis->file_path = config->path;
   pthis->initial_timestamp = config->initial_timestamp;
+  printf("audio source: initial timestamp = %f\n", pthis->initial_timestamp);
   int ret = open_file_stream(pthis);
   return ret;
 }
@@ -97,17 +109,25 @@ int audio_source_next_frame(struct audio_source_s* pthis, AVFrame** frame_out)
   int ret, got_frame = 0;
   AVPacket packet = { 0 };
   *frame_out = NULL;
+  char tried_reopen = 0;
 
   /* pump packet reader until fifo is populated, or file ends */
   while (!got_frame) {
     ret = av_read_frame(pthis->format_context, &packet);
-    if (ret < 0) {
+    if (AVERROR_EOF == ret && !tried_reopen) {
+      ret = reopen_file_stream(pthis);
+      tried_reopen = 1;
+      continue;
+    } else if (ret < 0) {
+      printf("%s\n", av_err2str(ret));
       return ret;
     }
 
     AVFrame* frame = av_frame_alloc();
     got_frame = 0;
-    if (packet.stream_index == pthis->stream_index) {
+    if (packet.stream_index == pthis->stream_index &&
+        packet.pts > pthis->last_pts_out)
+    {
       ret = avcodec_decode_audio4(pthis->codec_context, frame,
                                   &got_frame, &packet);
       if (ret < 0) {
@@ -117,7 +137,11 @@ int audio_source_next_frame(struct audio_source_s* pthis, AVFrame** frame_out)
 
       if (got_frame) {
         frame->pts = av_frame_get_best_effort_timestamp(frame);
+        printf("audio source: extracted pts %lld", frame->pts);
         pthis->last_pts_out = frame->pts;
+        // frames presented with global time
+        frame->pts += pthis->initial_timestamp;
+        printf(" (%lld)\n", frame->pts);
         *frame_out = frame;
       }
     } else {
@@ -131,3 +155,10 @@ int audio_source_next_frame(struct audio_source_s* pthis, AVFrame** frame_out)
 
 }
 
+const AVFormatContext* audio_source_get_format(struct audio_source_s* pthis) {
+  return pthis->format_context;
+}
+
+const AVCodecContext* audio_source_get_codec(struct audio_source_s* pthis) {
+  return pthis->codec_context;
+}

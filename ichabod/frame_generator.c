@@ -83,6 +83,7 @@ int extract_audio(struct audio_source_s* audio_source,
     ret = audio_source_next_frame(audio_source, &frame);
     if (frame) {
       audio_mixer_consume(audio_mixer, frame);
+      av_frame_free(&frame);
     }
   }
 

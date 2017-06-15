@@ -5,13 +5,19 @@
 //  Created by Charley Robinson on 6/1/17.
 //
 
-#include <stdio.h>
 #include <unistd.h>
 
 #include "media_queue.h"
 #include "file_writer.h"
 
+static char is_interrupted = 0;
+
+void on_signal(int sig) {
+  is_interrupted = 1;
+}
+
 int main(int argc, const char * argv[]) {
+  signal(SIGINT, on_signal);
   av_register_all();
   av_register_all();
   avfilter_register_all();
@@ -20,7 +26,7 @@ int main(int argc, const char * argv[]) {
   // todo: pass this in from horseman
   struct file_writer_t* file_writer;
   int ret = file_writer_alloc(&file_writer);
-  ret = file_writer_open(file_writer, "output.mp4", 1280, 720);
+  ret = file_writer_open(file_writer, "output.mp4", 640, 480);
   if (ret) {
     printf("unable to open output file\n");
     return ret;
@@ -35,9 +41,8 @@ int main(int argc, const char * argv[]) {
     return ret;
   }
   media_queue_start(queue);
-  int64_t init_ts = 0;
   int64_t frames_written = 0;
-  while (frames_written < 300) {
+  while (!is_interrupted) {
     while (media_queue_has_next(queue)) {
       AVFrame* frame = NULL;
       ret = media_queue_get_next(queue, &frame);
@@ -45,22 +50,20 @@ int main(int argc, const char * argv[]) {
         printf("queue pop failure\n");
         break;
       }
-      if (!init_ts) {
-        init_ts = frame->pts;
+      if (frame->width && frame->height) {
+        file_writer_push_video_frame(file_writer, frame);
+      } else if (frame->nb_samples) {
+        file_writer_push_audio_frame(file_writer, frame);
       }
-      frame->pts -= init_ts;
-      printf("push frame %lld\n", frame->pts);
-      file_writer_push_video_frame(file_writer, frame);
       av_frame_free(&frame);
       frames_written++;
     }
     // TODO: move this to an epoll or similar
     usleep(10000);
   }
-
+  media_queue_stop(queue);
   file_writer_close(file_writer);
   file_writer_free(file_writer);
-  media_queue_stop(queue);
   media_queue_free(queue);
 
   char cwd[1024];

@@ -20,7 +20,6 @@ extern "C" {
 
 #include <string>
 #include <map>
-#include <queue>
 
 struct media_queue_s {
   void* zmq_ctx;
@@ -28,15 +27,17 @@ struct media_queue_s {
   void* blobsink_socket;
   char is_interrupted;
   uv_thread_t worker_thread;
-  uv_mutex_t video_queue_lock;
-  std::queue<AVFrame*> video_frame_queue;
-  int audio_samples_per_frame;
+  uv_mutex_t frame_queue_lock;
+  std::map<int64_t, AVFrame*> video_frame_queue;
+  std::map<int64_t, AVFrame*> audio_frame_queue;
   struct audio_mixer_s* audio_mixer;
   std::map<std::string, struct audio_source_s*> audio_sources;
   struct frame_converter_s* audio_conv;
   AVFormatContext* output_format;
   AVCodecContext* audio_context;
   AVCodecContext* video_context;
+  double initial_video_timestamp;
+  double initial_audio_timestamp;
 };
 
 struct message_s {
@@ -44,6 +45,63 @@ struct message_s {
   double timestamp;
   char* sz_sid;
 };
+
+static int64_t audio_frame_queue_head_pts(struct media_queue_s* pthis) {
+  int64_t result;
+  uv_mutex_lock(&pthis->frame_queue_lock);
+  if (pthis->audio_frame_queue.empty()) {
+    result = 0;
+  } else {
+    result = pthis->audio_frame_queue.begin()->first;
+  }
+  uv_mutex_unlock(&pthis->frame_queue_lock);
+  return result;
+}
+
+static void audio_frame_queue_push_safe
+(struct media_queue_s* pthis, AVFrame* frame)
+{
+  uv_mutex_lock(&pthis->frame_queue_lock);
+  pthis->audio_frame_queue[frame->pts] = frame;
+  uv_mutex_unlock(&pthis->frame_queue_lock);
+}
+
+static void video_frame_queue_push_safe
+(struct media_queue_s* pthis, AVFrame* frame)
+{
+  uv_mutex_lock(&pthis->frame_queue_lock);
+  pthis->video_frame_queue[frame->pts] = frame;
+  uv_mutex_unlock(&pthis->frame_queue_lock);
+}
+
+// mergesort-style management of two queues at once. there's probably a cleaner
+// way to do this, but I haven't thought of it yet.
+static int frame_queue_pop_safe(struct media_queue_s* pthis, AVFrame** frame) {
+  AVFrame* audio_head = NULL;
+  AVFrame* video_head = NULL;
+  AVFrame* ret = NULL;
+  uv_mutex_lock(&pthis->frame_queue_lock);
+  if (!pthis->audio_frame_queue.empty()) {
+    auto audio_it = pthis->audio_frame_queue.begin();
+    audio_head = audio_it->second;
+  }
+  if (!pthis->video_frame_queue.empty()) {
+    auto video_it = pthis->video_frame_queue.begin();
+    video_head = video_it->second;
+  }
+  if (audio_head && video_head) {
+    ret = (audio_head->pts < video_head->pts) ? audio_head : video_head;
+  }
+  if (ret && audio_head == ret) {
+    pthis->audio_frame_queue.erase(audio_head->pts);
+  }
+  if (ret && video_head == ret) {
+    pthis->video_frame_queue.erase(video_head->pts);
+  }
+  uv_mutex_unlock(&pthis->frame_queue_lock);
+  *frame = ret;
+  return (NULL == ret);
+}
 
 static int get_audio_source(struct media_queue_s* pthis,
                             struct message_s* msg,
@@ -65,6 +123,7 @@ static int get_audio_source(struct media_queue_s* pthis,
     *source_out = NULL;
   } else {
     *source_out = source;
+    pthis->audio_sources[msg->sz_sid] = source;
   }
   return ret;
 }
@@ -127,11 +186,16 @@ static int receive_screencast(struct media_queue_s* pthis) {
            strlen(msg.sz_data),
            msg.timestamp);
     AVFrame* frame = NULL;
-    generate_frame(msg.sz_data, &frame);
-    frame->pts = msg.timestamp;
-    uv_mutex_lock(&pthis->video_queue_lock);
-    pthis->video_frame_queue.push(frame);
-    uv_mutex_unlock(&pthis->video_queue_lock);
+    ret = generate_frame(msg.sz_data, &frame);
+    if (ret) {
+      printf("failed to generate frame for ts %f\n", msg.timestamp);
+      return ret;
+    }
+    if (pthis->initial_video_timestamp < 0) {
+      pthis->initial_video_timestamp = msg.timestamp;
+    }
+    frame->pts = msg.timestamp - pthis->initial_video_timestamp;
+    video_frame_queue_push_safe(pthis, frame);
   }
   return ret;
 }
@@ -147,10 +211,50 @@ static int receive_blobsink(struct media_queue_s* pthis) {
            strlen(msg.sz_data), msg.timestamp, msg.sz_sid);
     struct audio_source_s* source;
     ret = get_audio_source(pthis, &msg, &source);
+    // TODO: This assumes all sources have the same format. Might be we need
+    // a different converter for each source (and the converter runs before
+    // the mixer)
+    if (!pthis->audio_conv) {
+      pthis->initial_audio_timestamp = msg.timestamp;
+      const AVCodecContext* audio_context = audio_source_get_codec(source);
+      struct frame_converter_config_s converter_config;
+      converter_config.num_channels = audio_context->channels;
+      converter_config.output_format = pthis->audio_context->sample_fmt;
+      converter_config.sample_rate = audio_context->sample_rate;
+      converter_config.samples_per_frame = pthis->audio_context->frame_size;
+      converter_config.channel_layout = audio_context->channel_layout;
+      //
+      converter_config.pts_offset = pthis->initial_audio_timestamp;
+      frame_converter_create(&pthis->audio_conv, &converter_config);
+    }
     if (ret) {
       printf("failed to open audio source %s\n", msg.sz_sid);
     } else {
+      // pull audio from file into mixer
       extract_audio(source, pthis->audio_mixer);
+      // pull from mixer into frame converter
+      int64_t mixer_ts = audio_mixer_get_current_ts(pthis->audio_mixer);
+      AVFrame* frame = NULL;
+      int64_t current_ts =
+      audio_frame_queue_head_pts(pthis) + pthis->initial_audio_timestamp;
+      // don't pull out of the mixer until at least 2s of content is buffered
+      while (audio_mixer_get_length(pthis->audio_mixer) > 2000) {
+        ret = audio_mixer_get_next(pthis->audio_mixer, &frame);
+        if (frame && !ret) {
+          frame_converter_consume(pthis->audio_conv, frame);
+        }
+        mixer_ts = audio_mixer_get_current_ts(pthis->audio_mixer);
+      }
+      // finally, pull from frame converter into audio queue
+      frame = NULL;
+      ret = frame_converter_get_next(pthis->audio_conv, &frame);
+      while (!ret) {
+        if (frame) {
+          frame->pts -= pthis->initial_audio_timestamp;
+          audio_frame_queue_push_safe(pthis, frame);
+        }
+        ret = frame_converter_get_next(pthis->audio_conv, &frame);
+      }
     }
   }
   return ret;
@@ -185,38 +289,46 @@ int media_queue_create(struct media_queue_s** queue,
   pthis->zmq_ctx = zmq_ctx_new();
   pthis->screencast_socket = zmq_socket(pthis->zmq_ctx, ZMQ_PULL);
   pthis->blobsink_socket = zmq_socket(pthis->zmq_ctx, ZMQ_PULL);
-  pthis->video_frame_queue = std::queue<AVFrame*>();
+  pthis->audio_frame_queue = std::map<int64_t, AVFrame*>();
+  pthis->video_frame_queue = std::map<int64_t, AVFrame*>();
   pthis->audio_sources = std::map<std::string, struct audio_source_s*>();
-  uv_mutex_init(&pthis->video_queue_lock);
-  pthis->audio_samples_per_frame = 960; // default: 48000 Hz @ 20 ms
+  uv_mutex_init(&pthis->frame_queue_lock);
   audio_mixer_alloc(&pthis->audio_mixer);
+  struct audio_mixer_config_s mixer_config;
+  mixer_config.output_codec = config->audio;
+  mixer_config.output_format = config->format;
+  audio_mixer_load_config(pthis->audio_mixer, &mixer_config);
   pthis->output_format = config->format;
   pthis->audio_context = config->audio;
   pthis->video_context = config->video;
-  struct frame_converter_config_s converter_config;
-  converter_config.num_channels = config->audio->channels;
-  converter_config.output_format = config->audio->sample_fmt;
-  converter_config.sample_rate = config->audio->sample_rate;
-  converter_config.samples_per_frame = config->audio->frame_size;
-  frame_converter_create(&pthis->audio_conv, &converter_config);
+  pthis->initial_video_timestamp = -1;
   *queue = pthis;
   return 0;
 }
 
 void media_queue_free(struct media_queue_s* pthis) {
   zmq_ctx_destroy(pthis->zmq_ctx);
-  while (!pthis->video_frame_queue.empty()) {
-    AVFrame* frame = pthis->video_frame_queue.front();
+  auto frame_queue_it = pthis->audio_frame_queue.begin();
+  while (frame_queue_it != pthis->audio_frame_queue.end()) {
+    AVFrame* frame = frame_queue_it->second;
     av_frame_free(&frame);
-    pthis->video_frame_queue.pop();
+    pthis->audio_frame_queue.erase(frame_queue_it);
+    frame_queue_it++;
   }
-  auto it = pthis->audio_sources.begin();
-  while (it != pthis->audio_sources.end()) {
-    audio_source_free(it->second);
-    it++;
+  frame_queue_it = pthis->video_frame_queue.begin();
+  while (frame_queue_it != pthis->video_frame_queue.end()) {
+    AVFrame* frame = frame_queue_it->second;
+    av_frame_free(&frame);
+    pthis->video_frame_queue.erase(frame_queue_it);
+    frame_queue_it++;
+  }
+  auto sources_it = pthis->audio_sources.begin();
+  while (sources_it != pthis->audio_sources.end()) {
+    audio_source_free(sources_it->second);
+    sources_it++;
   }
   pthis->audio_sources.clear();
-  uv_mutex_destroy(&pthis->video_queue_lock);
+  uv_mutex_destroy(&pthis->frame_queue_lock);
   audio_mixer_free(pthis->audio_mixer);
   free(pthis);
 }
@@ -235,20 +347,12 @@ int media_queue_stop(struct media_queue_s* pthis) {
 
 int media_queue_has_next(struct media_queue_s* pthis) {
   int ret = 0;
-  uv_mutex_lock(&pthis->video_queue_lock);
-  ret = !pthis->video_frame_queue.empty();
-  uv_mutex_unlock(&pthis->video_queue_lock);
+  uv_mutex_lock(&pthis->frame_queue_lock);
+  ret = !pthis->audio_frame_queue.empty() && !pthis->video_frame_queue.empty();
+  uv_mutex_unlock(&pthis->frame_queue_lock);
   return ret;
 }
 
 int media_queue_get_next(struct media_queue_s* pthis, AVFrame** frame) {
-  AVFrame* ret = NULL;
-  uv_mutex_lock(&pthis->video_queue_lock);
-  if (!pthis->video_frame_queue.empty()) {
-    ret = pthis->video_frame_queue.front();
-    pthis->video_frame_queue.pop();
-  }
-  uv_mutex_unlock(&pthis->video_queue_lock);
-  *frame = ret;
-  return (NULL == ret);
+  return frame_queue_pop_safe(pthis, frame);
 }

@@ -19,7 +19,6 @@
 
 const int out_pix_format = AV_PIX_FMT_YUV420P;
 const int out_audio_format = AV_SAMPLE_FMT_FLTP;
-const int src_audio_format = AV_SAMPLE_FMT_S16;
 const int out_audio_num_channels = 1;
 
 const char *video_filter_descr = "null";
@@ -199,6 +198,9 @@ static int init_audio_filters(struct file_writer_t* file_writer,
            (int)outlink->sample_rate,
            (char *)av_x_if_null(av_get_sample_fmt_name(outlink->format), "?"),
            args);
+
+  printf("%s\n", avfilter_graph_dump(file_writer->audio_filter_graph, NULL));
+
 
 end:
     avfilter_inout_free(&inputs);
@@ -446,7 +448,7 @@ static int open_output_file(struct file_writer_t* file_writer,
 
     if (fmt->video_codec == AV_CODEC_ID_H264) {
         av_opt_set(file_writer->video_ctx_out->priv_data,
-                   "preset", "fast", 0);
+                   "preset", "veryfast", 0);
     }
 
     /* Some formats want stream headers to be separate. */

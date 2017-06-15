@@ -16,9 +16,11 @@ struct frame_converter_s {
   enum AVSampleFormat format;
   int num_channels;
   int samples_per_frame;
+  uint64_t channel_layout;
   double sample_rate;
   double ts_out;
   double ts_in;
+  double ts_offset;
 };
 
 void frame_converter_create(struct frame_converter_s** converter_out,
@@ -30,6 +32,8 @@ void frame_converter_create(struct frame_converter_s** converter_out,
   pthis->num_channels = config->num_channels;
   pthis->samples_per_frame = config->samples_per_frame;
   pthis->sample_rate = config->sample_rate;
+  pthis->channel_layout = config->channel_layout;
+  pthis->ts_offset = config->pts_offset;
   pthis->fifo = av_audio_fifo_alloc(config->output_format,
                                     config->num_channels,
                                     config->samples_per_frame);
@@ -42,7 +46,8 @@ void frame_converter_free(struct frame_converter_s* pthis) {
 }
 
 int frame_converter_consume(struct frame_converter_s* pthis, AVFrame* frame) {
-  assert(frame->pts > pthis->ts_in);
+  //assert(frame->pts > pthis->ts_in);
+  assert(frame->format == pthis->format);
   pthis->ts_in = frame->pts;
   return av_audio_fifo_write(pthis->fifo,
                              (void**)frame->data,
@@ -54,12 +59,15 @@ int frame_converter_get_next(struct frame_converter_s* pthis,
 {
   int buffer_size = av_audio_fifo_size(pthis->fifo);
   if (buffer_size < pthis->samples_per_frame) {
+    *frame_out = NULL;
     return EAGAIN;
   }
   AVFrame* frame = av_frame_alloc();
   frame->format = pthis->format;
   frame->nb_samples = pthis->samples_per_frame;
   frame->channels = pthis->num_channels;
+  frame->channel_layout = pthis->channel_layout;
+  frame->sample_rate = pthis->sample_rate;
   int ret = av_frame_get_buffer(frame, 1);
   if (ret) {
     return ret;
@@ -67,10 +75,11 @@ int frame_converter_get_next(struct frame_converter_s* pthis,
   ret = av_audio_fifo_read(pthis->fifo, (void**)frame->data,
                            pthis->samples_per_frame);
   if (ret == pthis->samples_per_frame) {
+    frame->pts = pthis->ts_offset + (pthis->ts_out * 1000);
     pthis->ts_out += (double)pthis->samples_per_frame / pthis->sample_rate;
     *frame_out = frame;
   } else {
     av_frame_free(&frame);
   }
-  return pthis->samples_per_frame == ret;
+  return pthis->samples_per_frame != ret;
 }
