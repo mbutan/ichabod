@@ -10,7 +10,7 @@
 
 #include <libavutil/frame.h>
 #include <libavutil/avutil.h>
-struct archive_mixer_s;
+#include <libavformat/avformat.h>
 
 /**
  * multi-format mixer generates archive media from horseman data pipe.
@@ -22,12 +22,25 @@ struct archive_mixer_s;
  * 1) Constant frame rate video
  * 2) Audio mixdown from multiple sources
  */
+struct archive_mixer_s;
 
-void archive_mixer_alloc(struct archive_mixer_s** mixer_out);
+struct archive_mixer_config_s {
+  double initial_timestamp;
+  double min_buffer_time;
+  double video_fps_out;
+  AVFormatContext* format_out;
+  AVCodecContext* audio_ctx_out;
+  AVStream* audio_stream_out;
+  AVCodecContext* video_ctx_out;
+  AVStream* video_stream_out;
+};
+
+int archive_mixer_create(struct archive_mixer_s** mixer_out,
+                         struct archive_mixer_config_s* config);
 void archive_mixer_free(struct archive_mixer_s* mixer);
 
 void archive_mixer_consume_video(struct archive_mixer_s* mixer,
-                                 const char* frame_base64, double timestamp);
+                                 AVFrame* frame, double timestamp);
 void archive_mixer_consume_audio(struct archive_mixer_s* mixer,
                                  const char* file_path, double timestamp,
                                  const char* subscriber_id);

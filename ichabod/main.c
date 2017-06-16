@@ -6,9 +6,9 @@
 //
 
 #include <unistd.h>
+#include <signal.h>
 
-#include "media_queue.h"
-#include "file_writer.h"
+#include "ichabod.h"
 
 static char is_interrupted = 0;
 
@@ -22,53 +22,60 @@ int main(int argc, const char * argv[]) {
   av_register_all();
   avfilter_register_all();
   MagickWandGenesis();
-  struct media_queue_s* queue;
-  // todo: pass this in from horseman
-  struct file_writer_t* file_writer;
-  int ret = file_writer_alloc(&file_writer);
-  ret = file_writer_open(file_writer, "output.mp4", 640, 480);
-  if (ret) {
-    printf("unable to open output file\n");
-    return ret;
-  }
-  struct media_queue_config_s config;
-  config.format = file_writer->format_ctx_out;
-  config.audio = file_writer->audio_ctx_out;
-  config.video = file_writer->video_ctx_out;
-  ret = media_queue_create(&queue, &config);
-  if (ret) {
-    printf("could not allocate media queue\n");
-    return ret;
-  }
-  media_queue_start(queue);
-  int64_t frames_written = 0;
-  int quiet_interval = 0;
-  while (!is_interrupted && quiet_interval < 1000) {
-    quiet_interval++;
-    while (media_queue_has_next(queue)) {
-      quiet_interval = 0;
-      AVFrame* frame = NULL;
-      ret = media_queue_get_next(queue, &frame);
-      if (ret) {
-        printf("queue pop failure\n");
-        break;
-      }
-      if (frame->width && frame->height) {
-        file_writer_push_video_frame(file_writer, frame);
-      } else if (frame->nb_samples) {
-        file_writer_push_audio_frame(file_writer, frame);
-      }
-      av_frame_free(&frame);
-      frames_written++;
-    }
-    // TODO: move this to an epoll or similar
-    usleep(10000);
-  }
-  media_queue_stop(queue);
-  file_writer_close(file_writer);
-  file_writer_free(file_writer);
-  media_queue_free(queue);
+  // old implementation: please delete me if there's nothing useful here
+//  struct media_queue_s* queue;
+//  // todo: pass this in from horseman
+//  struct file_writer_t* file_writer;
+//  int ret = file_writer_alloc(&file_writer);
+//  ret = file_writer_open(file_writer, "output.mp4", 640, 480);
+//  if (ret) {
+//    printf("unable to open output file\n");
+//    return ret;
+//  }
+//  struct media_queue_config_s config;
+//  config.format = file_writer->format_ctx_out;
+//  config.audio = file_writer->audio_ctx_out;
+//  config.video = file_writer->video_ctx_out;
+//  ret = media_queue_create(&queue, &config);
+//  if (ret) {
+//    printf("could not allocate media queue\n");
+//    return ret;
+//  }
+//  media_queue_start(queue);
+//  int64_t frames_written = 0;
+//  int quiet_interval = 0;
+//  while (!is_interrupted && quiet_interval < 1000) {
+//    quiet_interval++;
+//    while (media_queue_has_next(queue)) {
+//      quiet_interval = 0;
+//      AVFrame* frame = NULL;
+//      ret = media_queue_get_next(queue, &frame);
+//      if (ret) {
+//        printf("queue pop failure\n");
+//        break;
+//      }
+//      if (frame->width && frame->height) {
+//        file_writer_push_video_frame(file_writer, frame);
+//      } else if (frame->nb_samples) {
+//        file_writer_push_audio_frame(file_writer, frame);
+//      }
+//      av_frame_free(&frame);
+//      frames_written++;
+//    }
+//    // TODO: move this to an epoll or similar
+//    usleep(10000);
+//  }
+//  media_queue_stop(queue);
+//  file_writer_close(file_writer);
+//  file_writer_free(file_writer);
+//  media_queue_free(queue);
 
+  struct ichabod_s* ichabod;
+  ichabod_alloc(&ichabod);
+  int ret = ichabod_main(ichabod);
+  if (ret) {
+    printf("uh oh! %d\n", ret);
+  }
   char cwd[1024];
   printf("%s\n", getcwd(cwd, sizeof(cwd)));
   return 0;

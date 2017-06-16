@@ -31,5 +31,6 @@ int audio_source_next_frame(struct audio_source_s* audio_source,
                             AVFrame** frame_out);
 const AVFormatContext* audio_source_get_format(struct audio_source_s* source);
 const AVCodecContext* audio_source_get_codec(struct audio_source_s* source);
+double audio_source_get_initital_timestamp(struct audio_source_s* source);
 
 #endif /* growing_file_audio_source_h */

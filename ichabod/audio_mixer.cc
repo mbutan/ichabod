@@ -25,11 +25,27 @@ struct audio_mixer_s {
   int64_t last_pts_out;
 };
 
+static int64_t tail_pts(struct audio_mixer_s* pthis) {
+  if (pthis->frame_map.empty()) {
+    return 0;
+  }
+  return pthis->frame_map.rbegin()->first;
+}
+
 static inline int samples_per_timeslice(struct audio_mixer_s* pthis) {
   // TODO: time base is definitely buried in format context. unbury it.
   // Also: this whole class should have configuable time slices. If we need
   // to speed things up, this would be a good place to start.
   return pthis->out_codec_context->sample_rate / 1000;
+}
+
+static AVFrame* frame_for_pts(struct audio_mixer_s* pthis, int64_t pts);
+static void ensure_mixer_continuity(struct audio_mixer_s* pthis,
+                                    int64_t from, int64_t to)
+{
+  for (int64_t i = from; i < to; i++) {
+    frame_for_pts(pthis, i);
+  }
 }
 
 static AVFrame* frame_for_pts(struct audio_mixer_s* pthis, int64_t pts) {
@@ -49,7 +65,6 @@ static AVFrame* frame_for_pts(struct audio_mixer_s* pthis, int64_t pts) {
                                samples_per_timeslice(pthis),
                                (enum AVSampleFormat)pthis->sample_format, 0);
     memset(result->data[0], 0, size);
-
     pthis->frame_map[pts] = result;
   } else {
     result = it->second;
@@ -90,7 +105,8 @@ int audio_mixer_consume(struct audio_mixer_s* pthis, AVFrame* frame) {
     pthis->channel_layout = frame->channel_layout;
   }
   if (!pthis->sample_format) {
-    pthis->sample_format = AV_SAMPLE_FMT_FLTP;
+    // TODO: this should get set up at config
+    pthis->sample_format = pthis->out_codec_context->sample_fmt;
   }
   if (!pthis->sample_rate) {
     pthis->sample_rate = frame->sample_rate;
@@ -98,13 +114,18 @@ int audio_mixer_consume(struct audio_mixer_s* pthis, AVFrame* frame) {
   if (!pthis->num_channels) {
     pthis->num_channels = frame->channels;
   }
+  // First frame will probably come in well after 0 global pts (seconds late).
+  // Make sure that the mixer still has data from the beginning of global time.
+  if (pthis->frame_map.empty()) {
+    ensure_mixer_continuity(pthis, 0, frame->pts);
+  }
   // Chop input frame into as many slices as we need. Mix each slice together
   // based on the global (millisecond) time clock.
   // TODO: figure out if sample formats need to be dynamically typed. For now,
   // Assuming everything comes in as signed 16-bit integer
   assert(AV_SAMPLE_FMT_S16 == frame->format);
   assert(1000 * frame->nb_samples / frame->sample_rate == frame->pkt_duration);
-  printf("audio mixer: mix down %lld ms / %lld samples "
+  printf("audio mixer: mix down %lld ms / %d samples "
          "(%lld - %lld)\n", frame->pkt_duration, frame->nb_samples, frame->pts,
          frame->pts + frame->pkt_duration);
   for (int64_t i = 0; i < frame->pkt_duration; i++) {
@@ -123,7 +144,9 @@ int audio_mixer_consume(struct audio_mixer_s* pthis, AVFrame* frame) {
       }
     }
   }
-
+  int64_t tail = tail_pts(pthis);
+  int64_t head = audio_mixer_get_head_ts(pthis);
+  ensure_mixer_continuity(pthis, head, tail);
   return 0;
 }
 
@@ -177,7 +200,10 @@ int audio_mixer_get_next(struct audio_mixer_s* pthis, AVFrame** frame_out) {
   return 0;
 }
 
-int64_t audio_mixer_get_current_ts(struct audio_mixer_s* pthis) {
+int64_t audio_mixer_get_head_ts(struct audio_mixer_s* pthis) {
+  if (pthis->frame_map.empty()) {
+    return 0;
+  }
   return pthis->frame_map.begin()->first;
 }
 

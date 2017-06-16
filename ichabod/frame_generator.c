@@ -73,19 +73,3 @@ int generate_frame(const char* png_base64, AVFrame** frame_out) {
   free((void*)b_img);
   return 0;
 }
-
-int extract_audio(struct audio_source_s* audio_source,
-                  struct audio_mixer_s* audio_mixer)
-{
-  int ret = 0;
-  AVFrame* frame = NULL;
-  while (!ret) {
-    ret = audio_source_next_frame(audio_source, &frame);
-    if (frame) {
-      audio_mixer_consume(audio_mixer, frame);
-      av_frame_free(&frame);
-    }
-  }
-
-  return ret;
-}

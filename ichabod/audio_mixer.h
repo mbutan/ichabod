@@ -30,7 +30,7 @@ void audio_mixer_free(struct audio_mixer_s* mixer);
 
 int audio_mixer_consume(struct audio_mixer_s* mixer, AVFrame* frame);
 int audio_mixer_get_next(struct audio_mixer_s* mixer, AVFrame** frame_out);
-int64_t audio_mixer_get_current_ts(struct audio_mixer_s* mixer);
+int64_t audio_mixer_get_head_ts(struct audio_mixer_s* mixer);
 int64_t audio_mixer_get_length(struct audio_mixer_s* mixer);
 void audio_mixer_set_frame_size_pts(struct audio_mixer_s* mixer, int size);
 

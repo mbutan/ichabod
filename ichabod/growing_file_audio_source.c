@@ -90,6 +90,8 @@ void audio_source_alloc(struct audio_source_s** audio_source_out) {
 }
 
 void audio_source_free(struct audio_source_s* pthis) {
+  free((void*)pthis->file_path);
+  pthis->file_path = NULL;
   avformat_close_input(&pthis->format_context);
   free(pthis);
 }
@@ -97,9 +99,11 @@ void audio_source_free(struct audio_source_s* pthis) {
 int audio_source_load_config(struct audio_source_s* pthis,
                              struct audio_source_config_s* config)
 {
-  pthis->file_path = config->path;
+  if (pthis->file_path) {
+    free((void*)pthis->file_path);
+  }
+  pthis->file_path = strdup(config->path);
   pthis->initial_timestamp = config->initial_timestamp;
-  printf("audio source: initial timestamp = %f\n", pthis->initial_timestamp);
   int ret = open_file_stream(pthis);
   return ret;
 }
@@ -137,11 +141,8 @@ int audio_source_next_frame(struct audio_source_s* pthis, AVFrame** frame_out)
 
       if (got_frame) {
         frame->pts = av_frame_get_best_effort_timestamp(frame);
-        printf("audio source: extracted pts %lld ", frame->pts);
+        printf("audio source: extracted pts %lld\n", frame->pts);
         pthis->last_pts_out = frame->pts;
-        // frames presented with global time
-        frame->pts += pthis->initial_timestamp;
-        printf("(%lld)\n", frame->pts);
         *frame_out = frame;
       }
     } else {
@@ -161,4 +162,8 @@ const AVFormatContext* audio_source_get_format(struct audio_source_s* pthis) {
 
 const AVCodecContext* audio_source_get_codec(struct audio_source_s* pthis) {
   return pthis->codec_context;
+}
+
+double audio_source_get_initital_timestamp(struct audio_source_s* pthis) {
+  return pthis->initial_timestamp;
 }
