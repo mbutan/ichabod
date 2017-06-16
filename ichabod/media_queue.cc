@@ -10,11 +10,13 @@ extern "C" {
 #include <stdlib.h>
 #include <zmq.h>
 #include <uv.h>
+#include <assert.h>
 #include "media_queue.h"
 #include "frame_generator.h"
 #include "audio_mixer.h"
 #include "growing_file_audio_source.h"
 #include "audio_frame_converter.h"
+#include "video_frame_buffer.h"
 
 }
 
@@ -38,6 +40,7 @@ struct media_queue_s {
   AVCodecContext* video_context;
   double initial_video_timestamp;
   double initial_audio_timestamp;
+  struct frame_buffer_s* video_buffer;
 };
 
 struct message_s {
@@ -45,6 +48,18 @@ struct message_s {
   double timestamp;
   char* sz_sid;
 };
+
+static int64_t video_queue_tail_pts(struct media_queue_s* pthis) {
+  int64_t result;
+  uv_mutex_lock(&pthis->frame_queue_lock);
+  if (pthis->video_frame_queue.empty()) {
+    result = 0;
+  } else {
+    result = pthis->video_frame_queue.end()->first;
+  }
+  uv_mutex_unlock(&pthis->frame_queue_lock);
+  return result;
+}
 
 static int64_t audio_frame_queue_head_pts(struct media_queue_s* pthis) {
   int64_t result;
@@ -90,10 +105,23 @@ static int frame_queue_pop_safe(struct media_queue_s* pthis, AVFrame** frame) {
     video_head = video_it->second;
   }
   if (audio_head && video_head) {
-    ret = (audio_head->pts < video_head->pts) ? audio_head : video_head;
+    // audio pts saved in timescale 48000Hz, rescale back to millis to compare
+    // to the video timestamp head for a fair comparison.
+    double audio_pts_millis =
+    (audio_head->pts / pthis->audio_context->sample_rate);
+    // additionally, compensate for the offset of when audio and video started
+    // this should get fixed: audio mixer needs to run always, not when first
+    // subscriber is set up.
+    //+ (pthis->initial_audio_timestamp - pthis->initial_video_timestamp);
+    ret = (audio_pts_millis < video_head->pts) ? audio_head : video_head;
   }
   if (ret && audio_head == ret) {
     pthis->audio_frame_queue.erase(audio_head->pts);
+    // once again compensate for audio offset time :-(
+    double audio_offset_time =
+    (pthis->initial_audio_timestamp - pthis->initial_video_timestamp) *
+    (pthis->audio_context->sample_rate / 1000);
+    ret->pts += audio_offset_time;
   }
   if (ret && video_head == ret) {
     pthis->video_frame_queue.erase(video_head->pts);
@@ -194,8 +222,15 @@ static int receive_screencast(struct media_queue_s* pthis) {
     if (pthis->initial_video_timestamp < 0) {
       pthis->initial_video_timestamp = msg.timestamp;
     }
-    frame->pts = msg.timestamp - pthis->initial_video_timestamp;
-    video_frame_queue_push_safe(pthis, frame);
+    double frame_pts = msg.timestamp - pthis->initial_video_timestamp;
+    frame->pts = frame_pts;
+    frame_buffer_consume(pthis->video_buffer, frame);
+    while (frame_buffer_has_next(pthis->video_buffer)) {
+      ret = frame_buffer_get_next(pthis->video_buffer, &frame);
+      if (!ret && frame) {
+        video_frame_queue_push_safe(pthis, frame);
+      }
+    }
   }
   return ret;
 }
@@ -224,7 +259,8 @@ static int receive_blobsink(struct media_queue_s* pthis) {
       converter_config.samples_per_frame = pthis->audio_context->frame_size;
       converter_config.channel_layout = audio_context->channel_layout;
       //
-      converter_config.pts_offset = pthis->initial_audio_timestamp;
+      // converter_config.pts_offset = pthis->initial_audio_timestamp;
+      converter_config.pts_offset = 0; 
       frame_converter_create(&pthis->audio_conv, &converter_config);
     }
     if (ret) {
@@ -235,8 +271,6 @@ static int receive_blobsink(struct media_queue_s* pthis) {
       // pull from mixer into frame converter
       int64_t mixer_ts = audio_mixer_get_current_ts(pthis->audio_mixer);
       AVFrame* frame = NULL;
-      int64_t current_ts =
-      audio_frame_queue_head_pts(pthis) + pthis->initial_audio_timestamp;
       // don't pull out of the mixer until at least 2s of content is buffered
       while (audio_mixer_get_length(pthis->audio_mixer) > 2000) {
         ret = audio_mixer_get_next(pthis->audio_mixer, &frame);
@@ -250,7 +284,6 @@ static int receive_blobsink(struct media_queue_s* pthis) {
       ret = frame_converter_get_next(pthis->audio_conv, &frame);
       while (!ret) {
         if (frame) {
-          frame->pts -= pthis->initial_audio_timestamp;
           audio_frame_queue_push_safe(pthis, frame);
         }
         ret = frame_converter_get_next(pthis->audio_conv, &frame);
@@ -302,6 +335,9 @@ int media_queue_create(struct media_queue_s** queue,
   pthis->audio_context = config->audio;
   pthis->video_context = config->video;
   pthis->initial_video_timestamp = -1;
+  // 30fps constant output frame buffer. TODO: make this configurable
+  frame_buffer_alloc(&pthis->video_buffer, 1000. / 30.);
+
   *queue = pthis;
   return 0;
 }
@@ -318,6 +354,7 @@ void media_queue_free(struct media_queue_s* pthis) {
   frame_queue_it = pthis->video_frame_queue.begin();
   while (frame_queue_it != pthis->video_frame_queue.end()) {
     AVFrame* frame = frame_queue_it->second;
+    assert(1 != (int64_t)frame); //wtf?
     av_frame_free(&frame);
     pthis->video_frame_queue.erase(frame_queue_it);
     frame_queue_it++;
@@ -330,6 +367,7 @@ void media_queue_free(struct media_queue_s* pthis) {
   pthis->audio_sources.clear();
   uv_mutex_destroy(&pthis->frame_queue_lock);
   audio_mixer_free(pthis->audio_mixer);
+  frame_buffer_free(pthis->video_buffer);
   free(pthis);
 }
 

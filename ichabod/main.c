@@ -42,8 +42,11 @@ int main(int argc, const char * argv[]) {
   }
   media_queue_start(queue);
   int64_t frames_written = 0;
-  while (!is_interrupted) {
+  int quiet_interval = 0;
+  while (!is_interrupted && quiet_interval < 1000) {
+    quiet_interval++;
     while (media_queue_has_next(queue)) {
+      quiet_interval = 0;
       AVFrame* frame = NULL;
       ret = media_queue_get_next(queue, &frame);
       if (ret) {

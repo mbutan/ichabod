@@ -137,11 +137,11 @@ int audio_source_next_frame(struct audio_source_s* pthis, AVFrame** frame_out)
 
       if (got_frame) {
         frame->pts = av_frame_get_best_effort_timestamp(frame);
-        printf("audio source: extracted pts %lld", frame->pts);
+        printf("audio source: extracted pts %lld ", frame->pts);
         pthis->last_pts_out = frame->pts;
         // frames presented with global time
         frame->pts += pthis->initial_timestamp;
-        printf(" (%lld)\n", frame->pts);
+        printf("(%lld)\n", frame->pts);
         *frame_out = frame;
       }
     } else {

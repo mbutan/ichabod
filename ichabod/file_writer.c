@@ -533,6 +533,7 @@ static int write_audio_frame(struct file_writer_t* file_writer,
 int file_writer_push_audio_frame(struct file_writer_t* file_writer,
                                  AVFrame* frame)
 {
+  printf("file writer: push audio pts %lld\n", frame->pts);
     int ret;
     AVFrame *filt_frame = av_frame_alloc();
     ret = av_buffersrc_add_frame_flags(file_writer->audio_buffersrc_ctx,
@@ -617,7 +618,8 @@ int file_writer_close(struct file_writer_t* file_writer)
 int file_writer_push_video_frame(struct file_writer_t* file_writer,
                                  AVFrame* frame)
 {
-    int ret = av_buffersrc_add_frame_flags(file_writer->video_buffersrc_ctx,
+  printf("file writer: push video pts %lld\n", frame->pts);
+  int ret = av_buffersrc_add_frame_flags(file_writer->video_buffersrc_ctx,
                                            frame, AV_BUFFERSRC_FLAG_KEEP_REF);
     AVFrame *filt_frame = av_frame_alloc();
 

@@ -26,6 +26,8 @@
 		D44842801EE0B094005038E5 /* media_queue.cc in Sources */ = {isa = PBXBuildFile; fileRef = D448427E1EE0B094005038E5 /* media_queue.cc */; };
 		D44842861EE1DFEA005038E5 /* base64.c in Sources */ = {isa = PBXBuildFile; fileRef = D44842841EE1DFEA005038E5 /* base64.c */; };
 		D44842891EE1E323005038E5 /* yuv_rgb.c in Sources */ = {isa = PBXBuildFile; fileRef = D44842871EE1E323005038E5 /* yuv_rgb.c */; };
+		D4E025101EF34C340019A14E /* video_frame_buffer.cc in Sources */ = {isa = PBXBuildFile; fileRef = D4E0250E1EF34C340019A14E /* video_frame_buffer.cc */; };
+		D4E025131EF36BA40019A14E /* archive_mixer.c in Sources */ = {isa = PBXBuildFile; fileRef = D4E025111EF36BA40019A14E /* archive_mixer.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -70,6 +72,10 @@
 		D44842851EE1DFEA005038E5 /* base64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = base64.h; sourceTree = "<group>"; };
 		D44842871EE1E323005038E5 /* yuv_rgb.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = yuv_rgb.c; sourceTree = "<group>"; };
 		D44842881EE1E323005038E5 /* yuv_rgb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = yuv_rgb.h; sourceTree = "<group>"; };
+		D4E0250E1EF34C340019A14E /* video_frame_buffer.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = video_frame_buffer.cc; sourceTree = "<group>"; };
+		D4E0250F1EF34C340019A14E /* video_frame_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = video_frame_buffer.h; sourceTree = "<group>"; };
+		D4E025111EF36BA40019A14E /* archive_mixer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = archive_mixer.c; sourceTree = "<group>"; };
+		D4E025121EF36BA40019A14E /* archive_mixer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = archive_mixer.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -131,6 +137,10 @@
 				D414C52C1EE9143200D335C3 /* growing_file_audio_source.h */,
 				D414C52E1EE9E31600D335C3 /* audio_frame_converter.c */,
 				D414C52F1EE9E31600D335C3 /* audio_frame_converter.h */,
+				D4E0250E1EF34C340019A14E /* video_frame_buffer.cc */,
+				D4E0250F1EF34C340019A14E /* video_frame_buffer.h */,
+				D4E025111EF36BA40019A14E /* archive_mixer.c */,
+				D4E025121EF36BA40019A14E /* archive_mixer.h */,
 			);
 			path = ichabod;
 			sourceTree = "<group>";
@@ -214,7 +224,9 @@
 				D44842861EE1DFEA005038E5 /* base64.c in Sources */,
 				D448427D1EE0B03E005038E5 /* frame_generator.c in Sources */,
 				D44061871EE8799A00A3901A /* audio_mixer.cc in Sources */,
+				D4E025101EF34C340019A14E /* video_frame_buffer.cc in Sources */,
 				D414FFAD1EEFCBCD00BD161C /* main.c in Sources */,
+				D4E025131EF36BA40019A14E /* archive_mixer.c in Sources */,
 				D448427A1EE0AFA6005038E5 /* file_writer.c in Sources */,
 				D44842801EE0B094005038E5 /* media_queue.cc in Sources */,
 				D414C5301EE9E31600D335C3 /* audio_frame_converter.c in Sources */,

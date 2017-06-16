@@ -18,7 +18,7 @@ struct frame_converter_s {
   int samples_per_frame;
   uint64_t channel_layout;
   double sample_rate;
-  double ts_out;
+  double next_pts_out;
   double ts_in;
   double ts_offset;
 };
@@ -46,7 +46,7 @@ void frame_converter_free(struct frame_converter_s* pthis) {
 }
 
 int frame_converter_consume(struct frame_converter_s* pthis, AVFrame* frame) {
-  //assert(frame->pts > pthis->ts_in);
+  assert(frame->pts > pthis->ts_in);
   assert(frame->format == pthis->format);
   pthis->ts_in = frame->pts;
   return av_audio_fifo_write(pthis->fifo,
@@ -75,8 +75,11 @@ int frame_converter_get_next(struct frame_converter_s* pthis,
   ret = av_audio_fifo_read(pthis->fifo, (void**)frame->data,
                            pthis->samples_per_frame);
   if (ret == pthis->samples_per_frame) {
-    frame->pts = pthis->ts_offset + (pthis->ts_out * 1000);
-    pthis->ts_out += (double)pthis->samples_per_frame / pthis->sample_rate;
+    double new_pts = pthis->ts_offset + pthis->next_pts_out;
+    new_pts *= pthis->sample_rate;
+    frame->pts = new_pts;
+    double interval = (double)pthis->samples_per_frame / pthis->sample_rate;
+    pthis->next_pts_out += interval;
     *frame_out = frame;
   } else {
     av_frame_free(&frame);
