@@ -94,7 +94,7 @@ void ichabod_free(struct ichabod_s* pthis) {
 int ichabod_main(struct ichabod_s* pthis) {
   media_queue_start(pthis->media_queue);
   int quiet_cycles = 0;
-  while (quiet_cycles < 2000) {
+  while (quiet_cycles < 1000) {
     quiet_cycles++;
     while (pthis->mixer && archive_mixer_has_next(pthis->mixer)) {
       quiet_cycles = 0;

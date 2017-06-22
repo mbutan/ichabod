@@ -141,6 +141,11 @@ int audio_mixer_consume(struct audio_mixer_s* pthis, AVFrame* frame) {
         out_data[channel_idx][sample_idx] +=
         (float)src_data[channel_idx][src_sample_offset + sample_idx]
         / INT16_MAX;
+        if (fabs(out_data[channel_idx][sample_idx]) > 1) {
+          printf("clipping audio!\n");
+          out_data[channel_idx][sample_idx] =
+          out_data[channel_idx][sample_idx] > 0 ? 1 : -1;
+        }
       }
     }
   }

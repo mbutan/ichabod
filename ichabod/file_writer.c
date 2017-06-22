@@ -488,7 +488,8 @@ static int safe_write_packet(struct file_writer_t* file_writer,
                              AVPacket* packet)
 {
     uv_mutex_lock(&file_writer->write_lock);
-    int ret = av_interleaved_write_frame(file_writer->format_ctx_out, packet);
+  int ret = av_interleaved_write_frame(file_writer->format_ctx_out, packet);
+  //int ret = av_write_frame(file_writer->format_ctx_out, packet);
     uv_mutex_unlock(&file_writer->write_lock);
     return ret;
 }
@@ -515,7 +516,8 @@ static int write_audio_frame(struct file_writer_t* file_writer,
         pkt.stream_index = file_writer->audio_stream->index;
 
         /* Write the compressed frame to the media file. */
-        printf("Write audio frame %lld, size=%d pts=%lld duration=%lld\n",
+        printf("file writer: Write audio frame %lld, size=%d pts=%lld "
+               "duration=%lld\n",
                file_writer->audio_frame_ct, pkt.size, pkt.pts, pkt.duration);
         file_writer->audio_frame_ct++;
         ret = safe_write_packet(file_writer, &pkt);
@@ -580,7 +582,7 @@ static int write_video_frame(struct file_writer_t* file_writer,
         pkt.stream_index = file_writer->video_stream->index;
 
         /* Write the compressed frame to the media file. */
-        printf("Write video frame %lld, size=%d pts=%lld\n",
+        printf("file writer: Write video frame %lld, size=%d pts=%lld\n",
                file_writer->video_frame_ct, pkt.size, pkt.pts);
         file_writer->video_frame_ct++;
         ret = safe_write_packet(file_writer, &pkt);

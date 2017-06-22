@@ -75,7 +75,9 @@ static int frame_queue_pop_safe(struct archive_mixer_s* pthis,
     video_head = video_it->second;
   }
   if (audio_head && video_head) {
-    ret = (audio_head->pts < video_head->pts) ? audio_head : video_head;
+    // articulate this comparison better: pts are presented in different units
+    // so we need to rescale here before making a fair comparison.
+    ret = (audio_head->pts < video_head->pts * 48) ? audio_head : video_head;
   }
   if (ret && audio_head == ret) {
     pthis->audio_frame_queue.erase(audio_head->pts);
@@ -187,7 +189,8 @@ void archive_mixer_consume_audio(struct archive_mixer_s* pthis,
     return;
   }
   double source_ts_offset =
-  audio_source_get_initital_timestamp(source) - pthis->initial_timestamp;
+  audio_source_get_initial_timestamp(source) - pthis->initial_timestamp;
+  source_ts_offset -= 1000; // is there a capture delay somewhere?
   AVFrame* frame = NULL;
   while (!ret) {
     ret = audio_source_next_frame(source, &frame);

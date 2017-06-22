@@ -21,6 +21,7 @@ struct audio_source_s {
   const char* file_path;
   int64_t last_pts_out;
   double initial_timestamp;
+  double corrected_pts;
 };
 
 static int open_file_stream(struct audio_source_s* pthis)
@@ -86,6 +87,7 @@ static int reopen_file_stream(struct audio_source_s* pthis) {
 void audio_source_alloc(struct audio_source_s** audio_source_out) {
   struct audio_source_s* pthis =
   (struct audio_source_s*)calloc(1, sizeof(struct audio_source_s));
+  pthis->corrected_pts = -1;
   *audio_source_out = pthis;
 }
 
@@ -141,8 +143,27 @@ int audio_source_next_frame(struct audio_source_s* pthis, AVFrame** frame_out)
 
       if (got_frame) {
         frame->pts = av_frame_get_best_effort_timestamp(frame);
-        printf("audio source: extracted pts %lld\n", frame->pts);
-        pthis->last_pts_out = frame->pts;
+
+        // repair bad PTS values coming from Chrome's MediaRecorder webms.
+        // TODO: File that with Chrome or otherwise figure out why these
+        // timestamps are messed up
+        int64_t original_pts = frame->pts;
+        if (pthis->corrected_pts < 0) {
+          pthis->corrected_pts = frame->pts;
+        } else {
+          AVStream* stream =
+          pthis->format_context->streams[pthis->stream_index];
+          double interval = (stream->time_base.den * frame->nb_samples) /
+          pthis->codec_context->sample_rate;
+          pthis->corrected_pts += interval;
+          frame->pts = pthis->corrected_pts;
+        }
+        printf("audio source: extracted pts %lld corrected pts %lld\n",
+               original_pts, frame->pts);
+        if (fabs(frame->pts - original_pts) > 10) {
+          printf("audio source: WARNING drifting audio PTS values\n");
+        }
+        pthis->last_pts_out = original_pts;
         *frame_out = frame;
       }
     } else {
@@ -164,6 +185,6 @@ const AVCodecContext* audio_source_get_codec(struct audio_source_s* pthis) {
   return pthis->codec_context;
 }
 
-double audio_source_get_initital_timestamp(struct audio_source_s* pthis) {
+double audio_source_get_initial_timestamp(struct audio_source_s* pthis) {
   return pthis->initial_timestamp;
 }
