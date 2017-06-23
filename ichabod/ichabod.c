@@ -95,7 +95,6 @@ int ichabod_main(struct ichabod_s* pthis) {
   media_queue_start(pthis->media_queue);
   int quiet_cycles = 0;
   while (quiet_cycles < 1000) {
-    quiet_cycles++;
     while (pthis->mixer && archive_mixer_has_next(pthis->mixer)) {
       quiet_cycles = 0;
       AVFrame* frame = NULL;
@@ -111,8 +110,10 @@ int ichabod_main(struct ichabod_s* pthis) {
       }
       av_frame_free(&frame);
     }
+    quiet_cycles++;
     usleep(10000);
   }
+  printf("ichabod main complete\n");
   media_queue_stop(pthis->media_queue);
   file_writer_close(pthis->file_writer);
   return 0;
