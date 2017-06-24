@@ -13,6 +13,7 @@
 static char is_interrupted = 0;
 
 void on_signal(int sig) {
+  printf("received interrupt\n");
   is_interrupted = 1;
 }
 

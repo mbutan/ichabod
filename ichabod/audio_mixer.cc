@@ -166,34 +166,9 @@ int audio_mixer_get_next(struct audio_mixer_s* pthis, AVFrame** frame_out) {
     pthis->last_pts_out = it->second->pts;
     pthis->frame_map.erase(it);
   } else if (pthis->last_pts_out + 1 != it->second->pts) {
-    // gap in mixed frames vs. next output frame. generate silence i guess?
-    // this might be an indication of a deeper issue. too early to tell.
-    // As far as I can tell, Chrome just likes to make up approximately
-    // accurate timestamps for webm audio pts.
-    //
-    // You can't make this stuff up, seriously. These are the extracted PTS
-    // for a single MediaRecorder output webm, and their samples per packet &
-    // self-declared packet durations. Either Chrome is insane or FFmpeg is not
-    // agreeing about how to decode the container's frame headers. FROWNY FACE.
-    // audio source: extracted pts 58 (58)
-    // audio mixer: mix down 60 ms / 2880 samples (58 - 118)
-    // audio source: extracted pts 116 (116)
-    // audio mixer: mix down 60 ms / 2880 samples (116 - 176)
-    // audio source: extracted pts 180 (180)
-    // audio mixer: mix down 60 ms / 2880 samples (180 - 240)
-    // audio source: extracted pts 237 (237)
-    // audio mixer: mix down 60 ms / 2880 samples (237 - 297)
-    // audio source: extracted pts 296 (296)
-    // audio mixer: mix down 60 ms / 2880 samples (296 - 356)
-    // audio source: extracted pts 359 (359)
-    // audio mixer: mix down 60 ms / 2880 samples (359 - 419)
-    // audio source: extracted pts 417 (417)
-    // audio mixer: mix down 60 ms / 2880 samples (417 - 477)
-    // audio source: extracted pts 475 (475)
-    // audio mixer: mix down 60 ms / 2880 samples (475 - 535)
     pthis->last_pts_out++;
-    printf("audio mixer: can't find contiguous mix frame for %lld: "
-           "sending silence\n", pthis->last_pts_out);
+//    printf("audio mixer: can't find contiguous mix frame for %lld: "
+//           "sending silence\n", pthis->last_pts_out);
     *frame_out = frame_for_pts(pthis, pthis->last_pts_out);
     assert((*frame_out)->pts == pthis->last_pts_out);
     pthis->frame_map.erase((*frame_out)->pts);
