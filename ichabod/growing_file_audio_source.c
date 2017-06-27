@@ -64,7 +64,7 @@ static int open_file_stream(struct audio_source_s* pthis)
   /* init the decoder */
   ret = avcodec_open2(pthis->codec_context, pthis->codec, NULL);
   if (ret < 0) {
-    av_log(NULL, AV_LOG_ERROR, "Cannot open video decoder\n");
+    av_log(NULL, AV_LOG_ERROR, "Cannot open audio decoder\n");
   }
 
   return ret;

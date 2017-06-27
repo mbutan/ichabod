@@ -13,7 +13,7 @@ extern "C" {
 #include "growing_file_audio_source.h"
 #include "video_frame_buffer.h"
 #include "audio_frame_converter.h"
-
+#include "pulse_audio_source.h"
 }
 
 #include <map>
@@ -22,6 +22,7 @@ extern "C" {
 struct archive_mixer_s {
   double initial_timestamp;
   double min_buffer_time;
+  struct pulse_s* pulse_audio;
   struct audio_mixer_s* audio_mixer;
   struct frame_converter_s* audio_frame_converter;
   struct frame_buffer_s* video_buffer;
@@ -143,9 +144,12 @@ int archive_mixer_create(struct archive_mixer_s** mixer_out,
   mixer_config.output_format = config->format_out;
   audio_mixer_load_config(pthis->audio_mixer, &mixer_config);
 
+  pulse_alloc(&pthis->pulse_audio);
+
   struct frame_converter_config_s converter_config;
   converter_config.num_channels = pthis->audio_ctx_out->channels;
-  converter_config.output_format = pthis->audio_ctx_out->sample_fmt;
+//  converter_config.output_format = pthis->audio_ctx_out->sample_fmt;
+  converter_config.output_format = AV_SAMPLE_FMT_S16;
   converter_config.sample_rate = pthis->audio_ctx_out->sample_rate;
   converter_config.samples_per_frame = pthis->audio_ctx_out->frame_size;
   converter_config.channel_layout = pthis->audio_ctx_out->channel_layout;
@@ -164,6 +168,32 @@ void archive_mixer_free(struct archive_mixer_s* pthis) {
   free(pthis);
 }
 
+static void archive_mixer_drain_audio(struct archive_mixer_s* pthis) {
+  int ret;
+  AVFrame* frame = NULL;
+  if (!pulse_is_running(pthis->pulse_audio)) {
+    pulse_open(pthis->pulse_audio);
+  }
+  while (pulse_has_next(pthis->pulse_audio)) {
+    ret = pulse_get_next(pthis->pulse_audio, &frame);
+    if (ret) {
+      continue;
+    }
+    frame_converter_consume(pthis->audio_frame_converter, frame);
+    av_frame_free(&frame);
+  }
+
+  // finally, pull from frame converter into audio queue
+  frame = NULL;
+  ret = frame_converter_get_next(pthis->audio_frame_converter, &frame);
+  while (!ret) {
+    if (frame) {
+      audio_frame_queue_push_safe(pthis, frame);
+    }
+    ret = frame_converter_get_next(pthis->audio_frame_converter, &frame);
+  }
+}
+
 void archive_mixer_consume_video(struct archive_mixer_s* pthis,
                                  AVFrame* frame, double timestamp)
 {
@@ -175,6 +205,8 @@ void archive_mixer_consume_video(struct archive_mixer_s* pthis,
       video_frame_queue_push_safe(pthis, frame);
     }
   }
+  // this is our only action function right now, so piggyback audio flush
+  archive_mixer_drain_audio(pthis);
 }
 
 void archive_mixer_consume_audio(struct archive_mixer_s* pthis,

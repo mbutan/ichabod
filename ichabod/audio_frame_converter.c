@@ -36,7 +36,7 @@ void frame_converter_create(struct frame_converter_s** converter_out,
   pthis->ts_offset = config->pts_offset;
   pthis->fifo = av_audio_fifo_alloc(config->output_format,
                                     config->num_channels,
-                                    config->samples_per_frame);
+                                    config->samples_per_frame * 4);
   *converter_out = pthis;
 }
 

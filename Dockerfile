@@ -6,7 +6,7 @@ apt-get install -y cmake libuv1 libuv1-dev libjansson4 libjansson-dev \
 libzip4 libzip-dev git clang automake autoconf libtool libx264-dev libopus-dev \
 yasm libpng-dev libjpeg-turbo8-dev gconf-service libasound2 libatk1.0-0 \
 libcairo2 libcups2 libdbus-1-3 libfontconfig1 libfreetype6 libgconf-2-4 \
-pkg-config curl libcurl4-gnutls-dev && \
+pkg-config curl libcurl4-gnutls-dev libpulse-dev pulseaudio alsa-utils && \
 curl -O https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
 dpkg -i google-chrome-stable_current_amd64.deb; apt-get -fy install && \
 curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
@@ -33,6 +33,7 @@ RUN git clone https://github.com/FFmpeg/FFmpeg.git && \
 cd FFmpeg && \
 git checkout n3.2.4 && \
 ./configure --enable-libx264 --enable-gpl \
+  --enable-libpulse \
   --extra-ldflags=-L/usr/local/lib \
   --extra-cflags=-I/usr/local/include \
   --enable-libopus && \
