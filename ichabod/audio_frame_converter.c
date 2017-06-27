@@ -46,7 +46,10 @@ void frame_converter_free(struct frame_converter_s* pthis) {
 }
 
 int frame_converter_consume(struct frame_converter_s* pthis, AVFrame* frame) {
-  assert(frame->pts >= pthis->ts_in);
+  if(frame->pts < pthis->ts_in) {
+    printf("WTF: consuming frame pts %lld last ts in: %f\n",
+           frame->pts, pthis->ts_in);
+  }
   assert(frame->format == pthis->format);
   pthis->ts_in = frame->pts;
   return av_audio_fifo_write(pthis->fifo,

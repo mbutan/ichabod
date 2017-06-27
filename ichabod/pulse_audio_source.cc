@@ -129,7 +129,7 @@ int pulse_open(struct pulse_s* pthis) {
     printf("can't find pulse input format. is it registered?\n");
     return -1;
   }
-  ret = avformat_open_input(&pthis->format_context, "6", pthis->input_format, NULL);
+  ret = avformat_open_input(&pthis->format_context, "default", pthis->input_format, NULL);
   if (ret) {
     printf("failed to open input %s\n", pthis->input_format->name);
     return ret;

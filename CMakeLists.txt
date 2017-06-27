@@ -15,6 +15,7 @@ pkg_check_modules (LIBAVCODEC REQUIRED libavcodec)
 pkg_check_modules (LIBAVUTIL REQUIRED libavutil)
 pkg_check_modules (LIBAVFORMAT REQUIRED libavformat)
 pkg_check_modules (LIBAVFILTER REQUIRED libavfilter)
+pkg_check_modules (LIBAVDEVICE REQUIRED libavdevice)
 pkg_check_modules (LIBSWSCALE REQUIRED libswscale)
 pkg_check_modules (LIBSWRESAMPLE REQUIRED libswresample)
 pkg_check_modules (LIBUV REQUIRED libuv)
@@ -48,6 +49,7 @@ link_libraries (${LIBAVCODEC_LDFLAGS})
 link_libraries (${LIBAVUTIL_LDFLAGS})
 link_libraries (${LIBAVFORMAT_LDFLAGS})
 link_libraries (${LIBAVFILTER_LDFLAGS})
+link_libraries (${LIBAVDEVICE_LDFLAGS})
 link_libraries (${LIBSWSCALE_LDFLAGS})
 link_libraries (${LIBSWRESAMPLE_LDFLAGS})
 link_libraries (${LIBUV_LDFLAGS})
@@ -62,6 +64,7 @@ include_directories (
   ${LIBAVUTIL_INCLUDE_DIRS}
   ${LIBAVFORMAT_INCLUDE_DIRS}
   ${LIBAVFILTER_INCLUDE_DIRS}
+  ${LIBAVDEVICE_INCLUDE_DIRS}
   ${LIBSWSCALE_INCLUDE_DIRS}
   ${LIBSWRESAMPLE_INCLUDE_DIRS}
   ${LIBUV_INCLUDE_DIRS}
