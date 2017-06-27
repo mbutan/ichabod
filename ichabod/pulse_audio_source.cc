@@ -17,6 +17,14 @@ extern "C" {
 
 #include <queue>
 
+// Workaround C++ issue with ffmpeg macro
+#ifndef __clang__
+#undef av_err2str
+#define av_err2str(errnum) \
+av_make_error_string((char*)__builtin_alloca(AV_ERROR_MAX_STRING_SIZE), \
+AV_ERROR_MAX_STRING_SIZE, errnum)
+#endif
+
 struct pulse_s {
   AVInputFormat* input_format;
   AVFormatContext* format_context;

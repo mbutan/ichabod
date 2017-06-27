@@ -17,6 +17,14 @@
 #include <libswresample/swresample.h>
 #include <assert.h>
 
+// Workaround C++ issue with ffmpeg macro
+#ifndef __clang__
+#undef av_err2str
+#define av_err2str(errnum) \
+av_make_error_string((char*)__builtin_alloca(AV_ERROR_MAX_STRING_SIZE), \
+AV_ERROR_MAX_STRING_SIZE, errnum)
+#endif
+
 const int out_pix_format = AV_PIX_FMT_YUV420P;
 const int out_audio_format = AV_SAMPLE_FMT_FLTP;
 const int out_audio_num_channels = 1;

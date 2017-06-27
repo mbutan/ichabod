@@ -13,6 +13,14 @@
 
 #include "growing_file_audio_source.h"
 
+// Workaround C++ issue with ffmpeg macro
+#ifndef __clang__
+#undef av_err2str
+#define av_err2str(errnum) \
+av_make_error_string((char*)__builtin_alloca(AV_ERROR_MAX_STRING_SIZE), \
+AV_ERROR_MAX_STRING_SIZE, errnum)
+#endif
+
 struct audio_source_s {
   AVFormatContext* format_context;
   AVCodecContext* codec_context;
