@@ -8,13 +8,13 @@
 #include <assert.h>
 #include <unistd.h>
 #include "ichabod.h"
-#include "media_queue.h"
+#include "horseman.h"
 #include "archive_mixer.h"
 #include "frame_generator.h"
 #include "file_writer.h"
 
 struct ichabod_s {
-  struct media_queue_s* media_queue;
+  struct horseman_s* horseman;
   struct archive_mixer_s* mixer;
   struct file_writer_t* file_writer;
 
@@ -47,8 +47,8 @@ static int build_mixer(struct ichabod_s* pthis, AVFrame* first_video_frame,
   return ret;
 }
 
-static void on_video_msg(struct media_queue_s* queue,
-                         struct media_queue_msg_s* msg, void* p)
+static void on_video_msg(struct horseman_s* queue,
+                         struct horseman_msg_s* msg, void* p)
 {
   struct ichabod_s* pthis = (struct ichabod_s*)p;
   AVFrame* frame = NULL;
@@ -63,8 +63,8 @@ static void on_video_msg(struct media_queue_s* queue,
   archive_mixer_consume_video(pthis->mixer, frame, msg->timestamp);
 }
 
-static void on_audio_msg(struct media_queue_s* queue,
-                         struct media_queue_msg_s* msg, void* p)
+static void on_audio_msg(struct horseman_s* queue,
+                         struct horseman_msg_s* msg, void* p)
 {
   struct ichabod_s* pthis = (struct ichabod_s*)p;
   archive_mixer_consume_audio(pthis->mixer, msg->sz_data,
@@ -75,24 +75,24 @@ void ichabod_alloc(struct ichabod_s** pout) {
   struct ichabod_s* pthis = (struct ichabod_s*)
   calloc(1, sizeof(struct ichabod_s));
   file_writer_alloc(&pthis->file_writer);
-  media_queue_alloc(&pthis->media_queue);
-  struct media_queue_config_s media_queue_config;
-  media_queue_config.on_audio_msg = on_audio_msg;
-  media_queue_config.on_video_msg = on_video_msg;
-  media_queue_config.p = pthis;
-  media_queue_load_config(pthis->media_queue, &media_queue_config);
+  horseman_alloc(&pthis->horseman);
+  struct horseman_config_s horseman_config;
+  horseman_config.on_audio_msg = on_audio_msg;
+  horseman_config.on_video_msg = on_video_msg;
+  horseman_config.p = pthis;
+  horseman_load_config(pthis->horseman, &horseman_config);
   *pout = pthis;
 }
 
 void ichabod_free(struct ichabod_s* pthis) {
-  media_queue_free(pthis->media_queue);
+  horseman_free(pthis->horseman);
   file_writer_free(pthis->file_writer);
   archive_mixer_free(pthis->mixer);
   free(pthis);
 }
 
 int ichabod_main(struct ichabod_s* pthis) {
-  media_queue_start(pthis->media_queue);
+  horseman_start(pthis->horseman);
   int quiet_cycles = 0;
   while (quiet_cycles < 1000) {
     while (pthis->mixer && archive_mixer_has_next(pthis->mixer)) {
@@ -114,7 +114,7 @@ int ichabod_main(struct ichabod_s* pthis) {
     usleep(10000);
   }
   printf("ichabod main complete\n");
-  media_queue_stop(pthis->media_queue);
+  horseman_stop(pthis->horseman);
   file_writer_close(pthis->file_writer);
   return 0;
 }
