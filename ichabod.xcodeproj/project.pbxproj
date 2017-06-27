@@ -28,6 +28,8 @@
 		D44842891EE1E323005038E5 /* yuv_rgb.c in Sources */ = {isa = PBXBuildFile; fileRef = D44842871EE1E323005038E5 /* yuv_rgb.c */; };
 		D4A2C7D11F01E33100C67449 /* pulse_audio_source.cc in Sources */ = {isa = PBXBuildFile; fileRef = D4A2C7CF1F01E33100C67449 /* pulse_audio_source.cc */; };
 		D4A2C7D31F01F7BC00C67449 /* libavdevice.57.1.100.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D4A2C7D21F01F7BC00C67449 /* libavdevice.57.1.100.dylib */; };
+		D4DFAB001F02C85500ACA299 /* resampler.c in Sources */ = {isa = PBXBuildFile; fileRef = D4DFAAFE1F02C85500ACA299 /* resampler.c */; };
+		D4DFAB021F02D36E00ACA299 /* libswresample.2.3.100.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D4DFAB011F02D36E00ACA299 /* libswresample.2.3.100.dylib */; };
 		D4E025101EF34C340019A14E /* video_frame_buffer.cc in Sources */ = {isa = PBXBuildFile; fileRef = D4E0250E1EF34C340019A14E /* video_frame_buffer.cc */; };
 		D4E025131EF36BA40019A14E /* archive_mixer.cc in Sources */ = {isa = PBXBuildFile; fileRef = D4E025111EF36BA40019A14E /* archive_mixer.cc */; };
 		D4E025171EF3729D0019A14E /* ichabod.c in Sources */ = {isa = PBXBuildFile; fileRef = D4E025151EF3729D0019A14E /* ichabod.c */; };
@@ -78,6 +80,9 @@
 		D4A2C7CF1F01E33100C67449 /* pulse_audio_source.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pulse_audio_source.cc; sourceTree = "<group>"; };
 		D4A2C7D01F01E33100C67449 /* pulse_audio_source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pulse_audio_source.h; sourceTree = "<group>"; };
 		D4A2C7D21F01F7BC00C67449 /* libavdevice.57.1.100.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavdevice.57.1.100.dylib; path = ../../../../usr/local/lib/libavdevice.57.1.100.dylib; sourceTree = "<group>"; };
+		D4DFAAFE1F02C85500ACA299 /* resampler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = resampler.c; sourceTree = "<group>"; };
+		D4DFAAFF1F02C85500ACA299 /* resampler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = resampler.h; sourceTree = "<group>"; };
+		D4DFAB011F02D36E00ACA299 /* libswresample.2.3.100.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libswresample.2.3.100.dylib; path = ../../../../usr/local/lib/libswresample.2.3.100.dylib; sourceTree = "<group>"; };
 		D4E0250E1EF34C340019A14E /* video_frame_buffer.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = video_frame_buffer.cc; sourceTree = "<group>"; };
 		D4E0250F1EF34C340019A14E /* video_frame_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = video_frame_buffer.h; sourceTree = "<group>"; };
 		D4E025111EF36BA40019A14E /* archive_mixer.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = archive_mixer.cc; sourceTree = "<group>"; };
@@ -91,6 +96,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4DFAB021F02D36E00ACA299 /* libswresample.2.3.100.dylib in Frameworks */,
 				D4A2C7D31F01F7BC00C67449 /* libavdevice.57.1.100.dylib in Frameworks */,
 				D44842761EE0AF5F005038E5 /* libopus.0.dylib in Frameworks */,
 				D44842771EE0AF5F005038E5 /* libx264.144.dylib in Frameworks */,
@@ -154,6 +160,8 @@
 				D4E025161EF3729D0019A14E /* ichabod.h */,
 				D4A2C7CF1F01E33100C67449 /* pulse_audio_source.cc */,
 				D4A2C7D01F01E33100C67449 /* pulse_audio_source.h */,
+				D4DFAAFE1F02C85500ACA299 /* resampler.c */,
+				D4DFAAFF1F02C85500ACA299 /* resampler.h */,
 			);
 			path = ichabod;
 			sourceTree = "<group>";
@@ -161,6 +169,7 @@
 		D44842631EE0AEEE005038E5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				D4DFAB011F02D36E00ACA299 /* libswresample.2.3.100.dylib */,
 				D4A2C7D21F01F7BC00C67449 /* libavdevice.57.1.100.dylib */,
 				D44842741EE0AF5F005038E5 /* libopus.0.dylib */,
 				D44842751EE0AF5F005038E5 /* libx264.144.dylib */,
@@ -246,6 +255,7 @@
 				D448427A1EE0AFA6005038E5 /* file_writer.c in Sources */,
 				D44842801EE0B094005038E5 /* media_queue.c in Sources */,
 				D414C5301EE9E31600D335C3 /* audio_frame_converter.c in Sources */,
+				D4DFAB001F02C85500ACA299 /* resampler.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

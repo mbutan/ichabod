@@ -18,7 +18,6 @@
 #include <assert.h>
 
 const int out_pix_format = AV_PIX_FMT_YUV420P;
-const int in_audio_format = AV_SAMPLE_FMT_S16;
 const int out_audio_format = AV_SAMPLE_FMT_FLTP;
 const int out_audio_num_channels = 1;
 
@@ -108,10 +107,8 @@ static int init_audio_filters(struct file_writer_t* file_writer,
     snprintf(args, sizeof(args),
              "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%"PRIx64,
              time_base.num, time_base.den,
-             //file_writer->audio_ctx_out->sample_rate,
-             96000,
-             //av_get_sample_fmt_name(file_writer->audio_ctx_out->sample_fmt),
-             av_get_sample_fmt_name(AV_SAMPLE_FMT_S16),
+             file_writer->audio_ctx_out->sample_rate,
+             av_get_sample_fmt_name(file_writer->audio_ctx_out->sample_fmt),
              file_writer->audio_ctx_out->channel_layout);
     ret = avfilter_graph_create_filter(&file_writer->audio_buffersrc_ctx,
                                        abuffersrc, "in",

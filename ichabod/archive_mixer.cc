@@ -148,8 +148,8 @@ int archive_mixer_create(struct archive_mixer_s** mixer_out,
 
   struct frame_converter_config_s converter_config;
   converter_config.num_channels = pthis->audio_ctx_out->channels;
-//  converter_config.output_format = pthis->audio_ctx_out->sample_fmt;
-  converter_config.output_format = AV_SAMPLE_FMT_S16;
+  converter_config.output_format = pthis->audio_ctx_out->sample_fmt;
+  //converter_config.output_format = AV_SAMPLE_FMT_S16;
   converter_config.sample_rate = pthis->audio_ctx_out->sample_rate;
   converter_config.samples_per_frame = pthis->audio_ctx_out->frame_size;
   converter_config.channel_layout = pthis->audio_ctx_out->channel_layout;

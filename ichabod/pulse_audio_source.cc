@@ -11,6 +11,8 @@ extern "C" {
 #include <libavdevice/avdevice.h>
 #include <uv.h>
 #include "pulse_audio_source.h"
+#include "resampler.h"
+
 }
 
 #include <queue>
@@ -29,6 +31,7 @@ struct pulse_s {
   char is_running;
   int64_t initial_timestamp;
   int64_t last_pts_read;
+  struct resampler_s* resampler;
 };
 
 static int pulse_worker_read_frame(struct pulse_s* pthis, AVFrame** frame_out) {
@@ -76,13 +79,19 @@ static int pulse_worker_read_frame(struct pulse_s* pthis, AVFrame** frame_out) {
 static void pulse_worker_main(void* p) {
   int ret;
   AVFrame* frame;
+  AVFrame* resampled_frame;
   struct pulse_s* pthis = (struct pulse_s*)p;
   pthis->is_running = 1;
   while (!pthis->is_interrupted) {
     ret = pulse_worker_read_frame(pthis, &frame);
-    if (!ret && frame) {
+    if (ret || !frame) {
+      continue;
+    }
+    ret = resampler_convert(pthis->resampler, frame, &resampled_frame);
+    av_frame_free(&frame);
+    if (!ret) {
       uv_mutex_lock(&pthis->queue_lock);
-      pthis->queue.push(frame);
+      pthis->queue.push(resampled_frame);
       uv_mutex_unlock(&pthis->queue_lock);
     }
   }
@@ -93,10 +102,15 @@ void pulse_alloc(struct pulse_s** pulse_out) {
   uv_mutex_init(&pthis->queue_lock);
   pthis->queue = std::queue<AVFrame*>();
   pthis->is_interrupted = 0;
+  resampler_alloc(&pthis->resampler);
   *pulse_out = pthis;
 }
 
 void pulse_free(struct pulse_s* pthis) {
+  uv_mutex_destroy(&pthis->queue_lock);
+  avcodec_free_context(&pthis->codec_context);
+  avformat_close_input(&pthis->format_context);
+  resampler_free(pthis->resampler);
   free(pthis);
 }
 
@@ -107,11 +121,18 @@ int pulse_open(struct pulse_s* pthis) {
     printf("can't find pulse input format. is it registered?\n");
     return -1;
   }
-  ret = avformat_open_input(&pthis->format_context, "4", pthis->input_format, NULL);
+  ret = avformat_open_input(&pthis->format_context, "6", pthis->input_format, NULL);
   if (ret) {
     printf("failed to open input %s\n", pthis->input_format->name);
     return ret;
   }
+
+  ret = avformat_find_stream_info(pthis->format_context, NULL);
+  if (ret < 0) {
+    printf("Could not find stream information\n");
+    return ret;
+  }
+
   ret = av_find_best_stream(pthis->format_context,
                             AVMEDIA_TYPE_AUDIO,
                             -1, -1,
@@ -123,14 +144,21 @@ int pulse_open(struct pulse_s* pthis) {
   }
   pthis->stream_index = ret;
   pthis->stream = pthis->format_context->streams[pthis->stream_index];
-//  pthis->codec = avcodec_find_decoder(pthis->stream->codecpar->codec_id);
-//  if (!pthis->codec) {
-//    printf("Failed to find audio codec\n");
-//    return AVERROR(EINVAL);
-//  }
+  pthis->codec = avcodec_find_decoder(pthis->stream->codecpar->codec_id);
+  if (!pthis->codec) {
+    printf("Failed to find audio codec\n");
+    return AVERROR(EINVAL);
+  }
 
-  /* Allocate a codec context for the decoder */
+  // Allocate a codec context for the decoder
   pthis->codec_context = avcodec_alloc_context3(pthis->codec);
+
+  ret = avcodec_parameters_to_context(pthis->codec_context,
+                                      pthis->stream->codecpar);
+  if (ret < 0) {
+    printf("Failed to copy stream codec parameters to codec context\n");
+    return ret;
+  }
 
   av_opt_set_int(pthis->codec_context, "refcounted_frames", 1, 0);
 
@@ -138,12 +166,26 @@ int pulse_open(struct pulse_s* pthis) {
   pthis->codec_context->request_sample_fmt = pthis->codec->sample_fmts[0];
   // TODO: There's no reason we shouldn't support stereo audio here
   pthis->codec_context->channels = 2;
+  pthis->codec_context->request_channel_layout = AV_CH_LAYOUT_STEREO;
+  pthis->codec_context->channel_layout = AV_CH_LAYOUT_STEREO;
 
   /* init the decoder */
   ret = avcodec_open2(pthis->codec_context, pthis->codec, NULL);
   if (ret < 0) {
     av_log(NULL, AV_LOG_ERROR, "Cannot open audio decoder\n");
   }
+
+  struct resampler_config_s config;
+  config.channel_layout_in = pthis->codec_context->channel_layout;
+  //config.channel_layout_in = AV_CH_LAYOUT_STEREO;
+  config.channel_layout_out = AV_CH_LAYOUT_MONO;
+  config.format_in = pthis->codec_context->sample_fmt;
+  config.format_out = AV_SAMPLE_FMT_FLTP;
+  config.sample_rate_in = pthis->codec_context->sample_rate;
+  config.sample_rate_out = 48000;
+  config.nb_channels_in = pthis->codec_context->channels;
+  config.nb_channels_out = 1;
+  resampler_load_config(pthis->resampler, &config);
 
   uv_thread_create(&pthis->worker_thread, pulse_worker_main, pthis);
 

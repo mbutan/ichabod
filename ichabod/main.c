@@ -26,18 +26,18 @@ int main(int argc, const char * argv[]) {
   avfilter_register_all();
   MagickWandGenesis();
 
-  struct pulse_s* pulse;
-  pulse_alloc(&pulse);
-  pulse_open(pulse);
-  AVFrame* frame = NULL;
-  while (1) {
-    if (pulse_has_next(pulse)) {
-      ret = pulse_get_next(pulse, &frame);
-      printf("yay %lld: num_samples=%d duration=%lld\n",
-             frame->pts, frame->nb_samples, frame->pkt_duration);
-    }
-    usleep(1000);
-  }
+//  struct pulse_s* pulse;
+//  pulse_alloc(&pulse);
+//  pulse_open(pulse);
+//  AVFrame* frame = NULL;
+//  while (1) {
+//    if (pulse_has_next(pulse)) {
+//      ret = pulse_get_next(pulse, &frame);
+//      printf("yay %lld: num_samples=%d duration=%lld\n",
+//             frame->pts, frame->nb_samples, frame->pkt_duration);
+//    }
+//    usleep(1000);
+//  }
 
   struct ichabod_s* ichabod;
   ichabod_alloc(&ichabod);
