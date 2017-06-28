@@ -40,6 +40,10 @@ struct pulse_s {
   int64_t initial_timestamp;
   int64_t last_pts_read;
   struct resampler_s* resampler;
+
+  void (*on_audio_data)(struct pulse_s* pulse, void* p);
+  void* audio_data_cb_p;
+
 };
 
 static int pulse_worker_read_frame(struct pulse_s* pthis, AVFrame** frame_out) {
@@ -68,7 +72,7 @@ static int pulse_worker_read_frame(struct pulse_s* pthis, AVFrame** frame_out) {
 
       if (got_frame) {
         frame->pts = av_frame_get_best_effort_timestamp(frame);
-        printf("audio source: extracted pts %lld (diff %lld)\n",
+        printf("audio source: extracted %lld (diff %lld)\n",
                frame->pts, frame->pts - pthis->last_pts_read);
         pthis->last_pts_read = frame->pts;
         *frame_out = frame;
@@ -101,6 +105,7 @@ static void pulse_worker_main(void* p) {
       uv_mutex_lock(&pthis->queue_lock);
       pthis->queue.push(resampled_frame);
       uv_mutex_unlock(&pthis->queue_lock);
+      pthis->on_audio_data(pthis, pthis->audio_data_cb_p);
     }
   }
 }
@@ -115,6 +120,11 @@ void pulse_alloc(struct pulse_s** pulse_out) {
 }
 
 void pulse_free(struct pulse_s* pthis) {
+  while (!pthis->queue.empty()) {
+    AVFrame* frame = pthis->queue.front();
+    pthis->queue.pop();
+    av_frame_free(&frame);
+  }
   uv_mutex_destroy(&pthis->queue_lock);
   avcodec_free_context(&pthis->codec_context);
   avformat_close_input(&pthis->format_context);
@@ -122,14 +132,26 @@ void pulse_free(struct pulse_s* pthis) {
   free(pthis);
 }
 
-int pulse_open(struct pulse_s* pthis) {
+void pulse_load_config(struct pulse_s* pthis, struct pulse_config_s* config) {
+  pthis->on_audio_data = config->on_audio_data;
+  pthis->audio_data_cb_p = config->audio_data_cb_p;
+}
+
+int pulse_start(struct pulse_s* pthis) {
   int ret;
   pthis->input_format = av_find_input_format("pulse");
   if (!pthis->input_format) {
     printf("can't find pulse input format. is it registered?\n");
     return -1;
   }
-  ret = avformat_open_input(&pthis->format_context, "default", pthis->input_format, NULL);
+  // if developing on OSX: you'll need to find the right interface to capture
+  // meaningful audio. use `pactl list sources` and put the interface number
+  // in that corresponds to your mic or loopback device
+//  const char* input_device = "9";
+  const char* input_device = "default";
+
+  ret = avformat_open_input(&pthis->format_context, input_device,
+                            pthis->input_format, NULL);
   if (ret) {
     printf("failed to open input %s\n", pthis->input_format->name);
     return ret;

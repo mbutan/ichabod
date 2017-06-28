@@ -33,12 +33,14 @@ struct archive_mixer_config_s {
   AVStream* audio_stream_out;
   AVCodecContext* video_ctx_out;
   AVStream* video_stream_out;
+  struct pulse_s* pulse_audio;
 };
 
 int archive_mixer_create(struct archive_mixer_s** mixer_out,
                          struct archive_mixer_config_s* config);
 void archive_mixer_free(struct archive_mixer_s* mixer);
 
+void archive_mixer_drain_audio(struct archive_mixer_s* mixer);
 void archive_mixer_consume_video(struct archive_mixer_s* mixer,
                                  AVFrame* frame, double timestamp);
 void archive_mixer_consume_audio(struct archive_mixer_s* mixer,
@@ -47,5 +49,7 @@ void archive_mixer_consume_audio(struct archive_mixer_s* mixer,
 char archive_mixer_has_next(struct archive_mixer_s* mixer);
 int archive_mixer_get_next(struct archive_mixer_s* mixer, AVFrame** frame_out,
                            enum AVMediaType* media_type);
+// (non locking) estimated number of frames remaining on the mixer
+size_t archive_mixer_get_size(struct archive_mixer_s* mixer);
 
 #endif /* archive_mixer_h */

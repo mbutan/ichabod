@@ -15,11 +15,18 @@
  */
 struct pulse_s;
 
+struct pulse_config_s {
+  // notify when new data hits the queue
+  void (*on_audio_data)(struct pulse_s* pulse, void* p);
+  void* audio_data_cb_p;
+};
+
 void pulse_alloc(struct pulse_s** pulse_out);
 void pulse_free(struct pulse_s* pulse);
+void pulse_load_config(struct pulse_s* pulse, struct pulse_config_s* config);
 
-int pulse_open(struct pulse_s* pulse);
-int pulse_close(struct pulse_s* pulse);
+int pulse_start(struct pulse_s* pulse);
+int pulse_stop(struct pulse_s* pulse);
 char pulse_is_running(struct pulse_s* pulse);
 
 char pulse_has_next(struct pulse_s* pulse);

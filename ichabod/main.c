@@ -11,11 +11,13 @@
 #include "ichabod.h"
 #include "pulse_audio_source.h"
 
-static char is_interrupted = 0;
+static struct ichabod_s* ichabod;
 
 void on_signal(int sig) {
   printf("received interrupt\n");
-  is_interrupted = 1;
+  if (ichabod) {
+    ichabod_interrupt(ichabod);
+  }
 }
 
 int main(int argc, const char * argv[]) {
@@ -26,26 +28,17 @@ int main(int argc, const char * argv[]) {
   avfilter_register_all();
   MagickWandGenesis();
 
-//  struct pulse_s* pulse;
-//  pulse_alloc(&pulse);
-//  pulse_open(pulse);
-//  AVFrame* frame = NULL;
-//  while (1) {
-//    if (pulse_has_next(pulse)) {
-//      ret = pulse_get_next(pulse, &frame);
-//      printf("yay %lld: num_samples=%d duration=%lld\n",
-//             frame->pts, frame->nb_samples, frame->pkt_duration);
-//    }
-//    usleep(1000);
-//  }
-
-  struct ichabod_s* ichabod;
   ichabod_alloc(&ichabod);
-  ret = ichabod_main(ichabod);
+  ret = ichabod_start(ichabod);
   if (ret) {
     printf("uh oh! %d\n", ret);
   }
+  while (ichabod_is_running(ichabod)) {
+    usleep(10000);
+  }
+  ichabod_free(ichabod);
+  ichabod = NULL;
   char cwd[1024];
   printf("%s\n", getcwd(cwd, sizeof(cwd)));
-  return 0;
+  return ret;
 }

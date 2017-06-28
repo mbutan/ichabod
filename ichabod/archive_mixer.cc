@@ -36,6 +36,9 @@ struct archive_mixer_s {
   AVStream* audio_stream_out;
   AVCodecContext* video_ctx_out;
   AVStream* video_stream_out;
+
+  size_t audio_size_estimated;
+  size_t video_size_estimated;
 };
 
 #pragma mark - Private Utilities
@@ -45,6 +48,7 @@ static void audio_frame_queue_push_safe
 {
   uv_mutex_lock(&pthis->queue_lock);
   pthis->audio_frame_queue[frame->pts] = frame;
+  pthis->audio_size_estimated = pthis->audio_frame_queue.size();
   uv_mutex_unlock(&pthis->queue_lock);
 }
 
@@ -53,6 +57,7 @@ static void video_frame_queue_push_safe
 {
   uv_mutex_lock(&pthis->queue_lock);
   pthis->video_frame_queue[frame->pts] = frame;
+  pthis->video_size_estimated = pthis->video_frame_queue.size();
   uv_mutex_unlock(&pthis->queue_lock);
 }
 
@@ -88,7 +93,11 @@ static int frame_queue_pop_safe(struct archive_mixer_s* pthis,
     pthis->video_frame_queue.erase(video_head->pts);
     *media_type = AVMEDIA_TYPE_VIDEO;
   }
+  pthis->video_size_estimated = pthis->video_frame_queue.size();
+  pthis->audio_size_estimated = pthis->audio_frame_queue.size();
   uv_mutex_unlock(&pthis->queue_lock);
+  printf("mixer: %zu audio %zu video frames in queue\n",
+         pthis->audio_size_estimated, pthis->video_size_estimated);
   *frame = ret;
   return (NULL == ret);
 }
@@ -138,13 +147,13 @@ int archive_mixer_create(struct archive_mixer_s** mixer_out,
   pthis->video_ctx_out = config->video_ctx_out;
   pthis->audio_stream_out = config->audio_stream_out;
   pthis->video_stream_out = config->video_stream_out;
+  pthis->pulse_audio = config->pulse_audio;
   audio_mixer_alloc(&pthis->audio_mixer);
   struct audio_mixer_config_s mixer_config;
   mixer_config.output_codec = config->audio_ctx_out;
   mixer_config.output_format = config->format_out;
   audio_mixer_load_config(pthis->audio_mixer, &mixer_config);
 
-  pulse_alloc(&pthis->pulse_audio);
 
   struct frame_converter_config_s converter_config;
   converter_config.num_channels = pthis->audio_ctx_out->channels;
@@ -167,12 +176,9 @@ void archive_mixer_free(struct archive_mixer_s* pthis) {
   free(pthis);
 }
 
-static void archive_mixer_drain_audio(struct archive_mixer_s* pthis) {
+void archive_mixer_drain_audio(struct archive_mixer_s* pthis) {
   int ret;
   AVFrame* frame = NULL;
-  if (!pulse_is_running(pthis->pulse_audio)) {
-    pulse_open(pthis->pulse_audio);
-  }
   while (pulse_has_next(pthis->pulse_audio)) {
     ret = pulse_get_next(pthis->pulse_audio, &frame);
     if (ret) {
@@ -204,8 +210,6 @@ void archive_mixer_consume_video(struct archive_mixer_s* pthis,
       video_frame_queue_push_safe(pthis, frame);
     }
   }
-  // this is our only action function right now, so piggyback audio flush
-  archive_mixer_drain_audio(pthis);
 }
 
 void archive_mixer_consume_audio(struct archive_mixer_s* pthis,
@@ -269,3 +273,6 @@ int archive_mixer_get_next(struct archive_mixer_s* pthis, AVFrame** frame_out,
   return ret;
 }
 
+size_t archive_mixer_get_size(struct archive_mixer_s* pthis) {
+  return pthis->video_size_estimated + pthis->audio_size_estimated;
+}

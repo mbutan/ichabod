@@ -21,7 +21,7 @@ struct horseman_s {
   void* screencast_socket;
   void* blobsink_socket;
   char is_interrupted;
-  uv_thread_t worker_thread;
+  uv_thread_t zmq_thread;
   
   uv_mutex_t lock;
   int64_t quiet_cycles;
@@ -31,7 +31,21 @@ struct horseman_s {
   void (*on_audio_msg)(struct horseman_s* queue,
                        struct horseman_msg_s* msg, void* p);
   void* callback_p;
+
+  // Separate runloop for dispatching callbacks.
+  uv_loop_t* loop;
+  uv_thread_t loop_thread;
+  char is_running;
 };
+
+static void horseman_loop_main(void* p) {
+  struct horseman_s* pthis = (struct horseman_s*)p;
+  int ret = 0;
+  while (pthis->is_running && 0 == ret) {
+    ret = uv_run(pthis->loop, UV_RUN_DEFAULT);
+  }
+  printf("horseman: exiting worker loop\n");
+}
 
 void reset_quiet_counter(struct horseman_s* pthis) {
   uv_mutex_lock(&pthis->lock);
@@ -100,6 +114,25 @@ static int receive_message(void* socket, struct horseman_msg_s* msg,
   return 0;
 }
 
+struct msg_dispatch_s {
+  uv_work_t work;
+  struct horseman_msg_s* msg;
+  struct horseman_s* horseman;
+};
+
+static void dispatch_video_msg(uv_work_t* work) {
+  struct msg_dispatch_s* async_msg = (struct msg_dispatch_s*) work->data;
+  struct horseman_s* pthis = async_msg->horseman;
+  struct horseman_msg_s* msg = async_msg->msg;
+  pthis->on_video_msg(pthis, msg, pthis->callback_p);
+}
+
+static void after_video_msg(uv_work_t* work, int status) {
+  struct msg_dispatch_s* msg = (struct msg_dispatch_s*) work->data;
+  horseman_msg_free(msg->msg);
+  free(msg);
+}
+
 static int receive_screencast(struct horseman_s* pthis, char* got_message) {
   struct horseman_msg_s* msg = calloc(1, sizeof(struct horseman_msg_s));
   // wait for zmq message
@@ -108,12 +141,17 @@ static int receive_screencast(struct horseman_s* pthis, char* got_message) {
   if (ret) {
     printf("trouble? %d %d\n", ret, errno);
   } else if (*got_message) {
-    printf("received screencast len=%ld ts=%f\n",
-           strlen(msg->sz_data),
+    printf("received screencast  ts=%f\n",
            msg->timestamp);
-    pthis->on_video_msg(pthis, msg, pthis->callback_p);
+
+    struct msg_dispatch_s* async_msg = (struct msg_dispatch_s*)
+    calloc(1, sizeof(struct msg_dispatch_s));
+    async_msg->msg = msg;
+    async_msg->horseman = pthis;
+    async_msg->work.data = async_msg;
+    ret = uv_queue_work(pthis->loop, &async_msg->work,
+                        dispatch_video_msg, after_video_msg);
   }
-  horseman_msg_free(msg);
   return ret;
 }
 
@@ -131,7 +169,7 @@ static int receive_blobsink(struct horseman_s* pthis, char* got_message) {
   return ret;
 }
 
-static void horseman_main(void* p) {
+static void horseman_zmq_main(void* p) {
   int ret;
   printf("media queue is online %p\n", p);
   struct horseman_s* pthis = (struct horseman_s*)p;
@@ -175,11 +213,29 @@ int horseman_alloc(struct horseman_s** queue) {
   pthis->blobsink_socket = zmq_socket(pthis->zmq_ctx, ZMQ_PULL);
   uv_mutex_init(&pthis->lock);
 
+  // shape the thread pool a bit
+  uv_cpu_info_t* cpu_infos;
+  int cpu_count;
+  uv_cpu_info(&cpu_infos, &cpu_count);
+  cpu_count = fmax(1, cpu_count - 2);
+  char str[4];
+  sprintf(str, "%d", cpu_count);
+  uv_free_cpu_info(cpu_infos, cpu_count);
+  // ...or, don't. your mileage may vary. see what works for you.
+  setenv("UV_THREADPOOL_SIZE", str, 0);
+  pthis->loop = (uv_loop_t*) malloc(sizeof(uv_loop_t));
+  uv_loop_init(pthis->loop);
+
   *queue = pthis;
   return 0;
 }
 
 void horseman_free(struct horseman_s* pthis) {
+  int ret;
+  pthis->is_running = 0;
+  uv_stop(pthis->loop);
+  free(pthis->loop);
+  uv_thread_join(&pthis->zmq_thread);
   zmq_ctx_destroy(pthis->zmq_ctx);
   uv_mutex_destroy(&pthis->lock);
   free(pthis);
@@ -187,14 +243,22 @@ void horseman_free(struct horseman_s* pthis) {
 
 int horseman_start(struct horseman_s* pthis) {
   pthis->is_interrupted = 0;
-  int ret = uv_thread_create(&pthis->worker_thread, horseman_main, pthis);
-  return ret;
+  pthis->is_running = 1;
+  int ret = uv_thread_create(&pthis->zmq_thread, horseman_zmq_main, pthis);
+  int get = uv_thread_create(&pthis->loop_thread, horseman_loop_main, pthis);
+  return ret | get;
 }
 
 int horseman_stop(struct horseman_s* pthis) {
+  int ret;
   pthis->is_interrupted = 1;
-  int ret = uv_thread_join(&pthis->worker_thread);
-  return ret;
+  pthis->is_running = 0;
+  do {
+    ret = uv_loop_close(pthis->loop);
+  } while (UV_EBUSY == ret);
+  ret = uv_thread_join(&pthis->zmq_thread);
+  int get = uv_thread_join(&pthis->loop_thread);
+  return ret | get;
 }
 
 int64_t horseman_get_quiet_cycles(struct horseman_s* pthis) {
