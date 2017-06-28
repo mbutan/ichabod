@@ -77,6 +77,11 @@ static void on_video_msg(struct horseman_s* queue,
     printf("unable to extract frame from video message\n");
     return;
   }
+  // This function runs on many threads, concurrently. The archive mixer
+  // knows how to reorder frames, but video_frame_buffer definitely does not.
+  // If you notice out-of-order video frames arriving in the archive, this
+  // needs to be fixed to enforce ordering. (tip: the consume video function
+  // can run on a single thread without any hassle).
   uv_mutex_lock(&pthis->mixer_lock);
   if (!pthis->mixer) {
     build_mixer(pthis, frame, msg->timestamp);
