@@ -168,7 +168,7 @@ int audio_source_next_frame(struct audio_source_s* pthis, AVFrame** frame_out)
         }
         printf("audio source: extracted pts %lld corrected pts %lld\n",
                original_pts, frame->pts);
-        if (fabs(frame->pts - original_pts) > 10) {
+        if (llabs(frame->pts - original_pts) > 10) {
           printf("audio source: WARNING drifting audio PTS values\n");
         }
         pthis->last_pts_out = original_pts;

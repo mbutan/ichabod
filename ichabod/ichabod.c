@@ -7,6 +7,8 @@
 
 #include <assert.h>
 #include <unistd.h>
+#include <libavdevice/avdevice.h>
+#include <MagickWand/MagickWand.h>
 #include "ichabod.h"
 #include "horseman.h"
 #include "archive_mixer.h"
@@ -23,12 +25,13 @@ struct ichabod_s {
   char is_running;
   char is_interrupted;
   uv_mutex_t mixer_lock;
+  const char* output_path;
 };
 
 static int build_mixer(struct ichabod_s* pthis, AVFrame* first_video_frame,
                        double initial_timestamp)
 {
-  int ret = file_writer_open(pthis->file_writer, "output.mp4",
+  int ret = file_writer_open(pthis->file_writer, pthis->output_path,
                              first_video_frame->width,
                              first_video_frame->height);
   if (ret) {
@@ -98,6 +101,13 @@ static void on_audio_msg(struct horseman_s* queue,
                               msg->timestamp, msg->sz_sid);
 }
 
+void ichabod_initialize() {
+  av_register_all();
+  avdevice_register_all();
+  avfilter_register_all();
+  MagickWandGenesis();
+}
+
 void ichabod_alloc(struct ichabod_s** pout) {
   struct ichabod_s* pthis = (struct ichabod_s*)
   calloc(1, sizeof(struct ichabod_s));
@@ -126,6 +136,13 @@ void ichabod_free(struct ichabod_s* pthis) {
   pthis->mixer = NULL;
   free(pthis);
 }
+
+void ichabod_load_config(struct ichabod_s* pthis,
+                         struct ichabod_config_s* config)
+{
+  pthis->output_path = config->output_path;
+}
+
 
 // Run ichabod_main cycles so long as data is queued to write AND 
 static inline char should_try_cycle(struct ichabod_s* pthis) {
