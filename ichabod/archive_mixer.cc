@@ -67,6 +67,10 @@ static int frame_queue_pop_safe(struct archive_mixer_s* pthis,
                                 AVFrame** frame,
                                 enum AVMediaType* media_type)
 {
+  int64_t ahead_pts = -1;
+  int64_t vhead_pts = -1;
+  int64_t atail_pts = -1;
+  int64_t vtail_pts = -1;
   *media_type = AVMEDIA_TYPE_UNKNOWN;
   AVFrame* audio_head = NULL;
   AVFrame* video_head = NULL;
@@ -75,15 +79,25 @@ static int frame_queue_pop_safe(struct archive_mixer_s* pthis,
   if (!pthis->audio_frame_queue.empty()) {
     auto audio_it = pthis->audio_frame_queue.begin();
     audio_head = audio_it->second;
+    ahead_pts = audio_it->second->pts;
+    auto audio_tail_it = pthis->audio_frame_queue.rbegin();
+    atail_pts = audio_tail_it->second->pts;
   }
   if (!pthis->video_frame_queue.empty()) {
     auto video_it = pthis->video_frame_queue.begin();
     video_head = video_it->second;
+    vhead_pts = video_it->second->pts;
+    auto video_tail_it = pthis->video_frame_queue.rbegin();
+    vtail_pts = video_it->second->pts;
   }
   if (audio_head && video_head) {
     // articulate this comparison better: pts are presented in different units
     // so we need to rescale here before making a fair comparison.
     ret = (audio_head->pts < video_head->pts * 48) ? audio_head : video_head;
+  } else if (audio_head) {
+    ret = audio_head;
+  } else if (video_head) {
+    ret = video_head;
   }
   if (ret && audio_head == ret) {
     pthis->audio_frame_queue.erase(audio_head->pts);
@@ -98,6 +112,8 @@ static int frame_queue_pop_safe(struct archive_mixer_s* pthis,
   uv_mutex_unlock(&pthis->queue_lock);
   printf("mixer: %zu audio %zu video frames in queue\n",
          pthis->audio_size_estimated, pthis->video_size_estimated);
+  printf("mixer: audio head %lld tail %lld video head %lld tail %lld\n",
+         ahead_pts, atail_pts, vhead_pts, vtail_pts);
   *frame = ret;
   return (NULL == ret);
 }
@@ -260,7 +276,7 @@ void archive_mixer_consume_audio(struct archive_mixer_s* pthis,
 char archive_mixer_has_next(struct archive_mixer_s* pthis) {
   char ret = 0;
   uv_mutex_lock(&pthis->queue_lock);
-  ret = !pthis->audio_frame_queue.empty() && !pthis->video_frame_queue.empty();
+  ret = !pthis->audio_frame_queue.empty() || !pthis->video_frame_queue.empty();
   uv_mutex_unlock(&pthis->queue_lock);
   return ret;
 }
