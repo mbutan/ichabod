@@ -147,7 +147,7 @@ int pulse_start(struct pulse_s* pthis) {
   // if developing on OSX: you'll need to find the right interface to capture
   // meaningful audio. use `pactl list sources` and put the interface number
   // in that corresponds to your mic or loopback device
-//  const char* input_device = "9";
+//  const char* input_device = "6";
   const char* input_device = "default";
 
   ret = avformat_open_input(&pthis->format_context, input_device,

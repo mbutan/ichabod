@@ -10,6 +10,7 @@
 		D414C52D1EE9143200D335C3 /* growing_file_audio_source.c in Sources */ = {isa = PBXBuildFile; fileRef = D414C52B1EE9143200D335C3 /* growing_file_audio_source.c */; };
 		D414C5301EE9E31600D335C3 /* audio_frame_converter.c in Sources */ = {isa = PBXBuildFile; fileRef = D414C52E1EE9E31600D335C3 /* audio_frame_converter.c */; };
 		D414FFAD1EEFCBCD00BD161C /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D448425C1EE0AE38005038E5 /* main.c */; };
+		D42EF7D51F06E8C5004D0C43 /* streamer.c in Sources */ = {isa = PBXBuildFile; fileRef = D42EF7D31F06E8C5004D0C43 /* streamer.c */; };
 		D44061871EE8799A00A3901A /* audio_mixer.cc in Sources */ = {isa = PBXBuildFile; fileRef = D44061851EE8799A00A3901A /* audio_mixer.cc */; };
 		D44842661EE0AEEF005038E5 /* libMagickWand-7.Q16HDRI.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842641EE0AEEF005038E5 /* libMagickWand-7.Q16HDRI.0.dylib */; };
 		D44842671EE0AEEF005038E5 /* libavcodec.57.64.101.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842651EE0AEEF005038E5 /* libavcodec.57.64.101.dylib */; };
@@ -53,6 +54,8 @@
 		D414C52E1EE9E31600D335C3 /* audio_frame_converter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = audio_frame_converter.c; sourceTree = "<group>"; };
 		D414C52F1EE9E31600D335C3 /* audio_frame_converter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = audio_frame_converter.h; sourceTree = "<group>"; };
 		D414FFA91EEFBF3400BD161C /* main_offline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main_offline.c; sourceTree = "<group>"; };
+		D42EF7D31F06E8C5004D0C43 /* streamer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = streamer.c; sourceTree = "<group>"; };
+		D42EF7D41F06E8C5004D0C43 /* streamer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = streamer.h; sourceTree = "<group>"; };
 		D44061851EE8799A00A3901A /* audio_mixer.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = audio_mixer.cc; sourceTree = "<group>"; };
 		D44061861EE8799A00A3901A /* audio_mixer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = audio_mixer.h; sourceTree = "<group>"; };
 		D44842591EE0AE38005038E5 /* ichabod */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ichabod; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -136,8 +139,10 @@
 			children = (
 				D448425C1EE0AE38005038E5 /* main.c */,
 				D414FFA91EEFBF3400BD161C /* main_offline.c */,
-				D44842791EE0AFA6005038E5 /* file_writer.h */,
+				D42EF7D31F06E8C5004D0C43 /* streamer.c */,
+				D42EF7D41F06E8C5004D0C43 /* streamer.h */,
 				D44842781EE0AFA6005038E5 /* file_writer.c */,
+				D44842791EE0AFA6005038E5 /* file_writer.h */,
 				D448427B1EE0B03E005038E5 /* frame_generator.c */,
 				D448427C1EE0B03E005038E5 /* frame_generator.h */,
 				D448427E1EE0B094005038E5 /* horseman.c */,
@@ -255,6 +260,7 @@
 				D448427A1EE0AFA6005038E5 /* file_writer.c in Sources */,
 				D44842801EE0B094005038E5 /* horseman.c in Sources */,
 				D414C5301EE9E31600D335C3 /* audio_frame_converter.c in Sources */,
+				D42EF7D51F06E8C5004D0C43 /* streamer.c in Sources */,
 				D4DFAB001F02C85500ACA299 /* resampler.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

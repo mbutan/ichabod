@@ -607,24 +607,6 @@ static int write_video_frame(struct file_writer_t* file_writer,
     return ret;
 }
 
-int file_writer_close(struct file_writer_t* file_writer)
-{
-    int ret = av_write_trailer(file_writer->format_ctx_out);
-    if (ret) {
-        printf("no trailer!\n");
-    }
-    avcodec_close(file_writer->video_ctx_out);
-    
-    if (!(file_writer->format_ctx_out->oformat->flags & AVFMT_NOFILE)) {
-        avio_closep(&file_writer->format_ctx_out->pb);
-    }
-    
-    avformat_free_context(file_writer->format_ctx_out);
-    
-    printf("File write done!\n");
-    return 0;
-}
-
 int file_writer_push_video_frame(struct file_writer_t* file_writer,
                                  AVFrame* frame)
 {
@@ -659,4 +641,22 @@ end:
     av_frame_free(&filt_frame);
 
     return ret;
+}
+
+int file_writer_close(struct file_writer_t* file_writer)
+{
+  int ret = av_write_trailer(file_writer->format_ctx_out);
+  if (ret) {
+    printf("no trailer!\n");
+  }
+  avcodec_close(file_writer->video_ctx_out);
+
+  if (!(file_writer->format_ctx_out->oformat->flags & AVFMT_NOFILE)) {
+    avio_closep(&file_writer->format_ctx_out->pb);
+  }
+
+  avformat_free_context(file_writer->format_ctx_out);
+
+  printf("File write done!\n");
+  return 0;
 }

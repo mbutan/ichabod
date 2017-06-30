@@ -11,7 +11,7 @@
 #include <getopt.h>
 
 #include "ichabod.h"
-#include "pulse_audio_source.h"
+#include "streamer.h"
 
 static struct ichabod_s* ichabod;
 
@@ -65,6 +65,7 @@ int main(int argc, char* const* argv) {
   }
 
   ichabod_initialize();
+
   ichabod_alloc(&ichabod);
   struct ichabod_config_s config;
   config.output_path = output_path;

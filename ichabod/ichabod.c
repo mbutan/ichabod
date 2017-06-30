@@ -15,6 +15,7 @@
 #include "frame_generator.h"
 #include "file_writer.h"
 #include "pulse_audio_source.h"
+#include "streamer.h"
 
 struct ichabod_s {
   struct horseman_s* horseman;
@@ -26,37 +27,67 @@ struct ichabod_s {
   char is_interrupted;
   uv_mutex_t mixer_lock;
   const char* output_path;
+  struct streamer_s* streamer;
+  char use_streamer;
+  int width, height;
 };
+
+static int build_output(struct ichabod_s* pthis) {
+  int ret;
+  if (pthis->use_streamer) {
+    struct streamer_config_s streamer_config;
+    streamer_config.url = pthis->output_path;
+    streamer_config.width = pthis->width;
+    streamer_config.height = pthis->height;
+    streamer_load_config(pthis->streamer, &streamer_config);
+    ret = streamer_start(pthis->streamer);
+  } else {
+    ret = file_writer_open(pthis->file_writer, pthis->output_path,
+                           pthis->width, pthis->height);
+  }
+  if (ret) {
+    printf("ichabod: cannot build output\n");
+  }
+  return ret;
+}
 
 static int build_mixer(struct ichabod_s* pthis, AVFrame* first_video_frame,
                        double initial_timestamp)
 {
-  int ret = file_writer_open(pthis->file_writer, pthis->output_path,
-                             first_video_frame->width,
-                             first_video_frame->height);
+  int ret;
+  pthis->width = first_video_frame->width;
+  pthis->height = first_video_frame->height;
+
+  ret = build_output(pthis);
   if (ret) {
-    printf("ichabod: cannot build file output\n");
     return ret;
   }
   struct archive_mixer_config_s mixer_config;
   mixer_config.min_buffer_time = 2; // does this need to be configurable?
   mixer_config.video_fps_out = 30; // this too?
-  mixer_config.audio_ctx_out = pthis->file_writer->audio_ctx_out;
-  mixer_config.audio_stream_out = pthis->file_writer->audio_stream;
-  mixer_config.format_out = pthis->file_writer->format_ctx_out;
-  mixer_config.video_ctx_out = pthis->file_writer->video_ctx_out;
-  mixer_config.video_stream_out = pthis->file_writer->video_stream;
+  if (pthis->use_streamer) {
+    mixer_config.audio_ctx_out = pthis->streamer->audio_context;
+    mixer_config.audio_stream_out = pthis->streamer->audio_stream;
+    mixer_config.format_out = pthis->streamer->format_context;
+    mixer_config.video_ctx_out = pthis->streamer->video_context;
+    mixer_config.video_stream_out = pthis->streamer->video_stream;
+  } else {
+    mixer_config.audio_ctx_out = pthis->file_writer->audio_ctx_out;
+    mixer_config.audio_stream_out = pthis->file_writer->audio_stream;
+    mixer_config.format_out = pthis->file_writer->format_ctx_out;
+    mixer_config.video_ctx_out = pthis->file_writer->video_ctx_out;
+    mixer_config.video_stream_out = pthis->file_writer->video_stream;
+  }
   mixer_config.initial_timestamp = initial_timestamp;
   mixer_config.pulse_audio = pthis->pulse_audio;
-
-  ret = pulse_start(pthis->pulse_audio);
-  if (ret) {
-    printf("failed to open pulse audio! ichabod will be silent.\n");
-  }
   ret = archive_mixer_create(&pthis->mixer, &mixer_config);
   if (ret) {
     printf("ichabod: cannot build mixer\n");
     return ret;
+  }
+  ret = pulse_start(pthis->pulse_audio);
+  if (ret) {
+    printf("failed to open pulse audio! ichabod will be silent.\n");
   }
   return ret;
 }
@@ -87,7 +118,8 @@ static void on_video_msg(struct horseman_s* queue,
   // can run on a single thread without any hassle).
   uv_mutex_lock(&pthis->mixer_lock);
   if (!pthis->mixer) {
-    build_mixer(pthis, frame, msg->timestamp);
+    ret = build_mixer(pthis, frame, msg->timestamp);
+    assert(!ret);
   }
   archive_mixer_consume_video(pthis->mixer, frame, msg->timestamp);
   uv_mutex_unlock(&pthis->mixer_lock);
@@ -103,6 +135,7 @@ static void on_audio_msg(struct horseman_s* queue,
 
 void ichabod_initialize() {
   av_register_all();
+  avformat_network_init();
   avdevice_register_all();
   avfilter_register_all();
   MagickWandGenesis();
@@ -118,6 +151,8 @@ void ichabod_alloc(struct ichabod_s** pout) {
   horseman_config.on_video_msg = on_video_msg;
   horseman_config.p = pthis;
   horseman_load_config(pthis->horseman, &horseman_config);
+
+  streamer_alloc(&pthis->streamer);
 
   pulse_alloc(&pthis->pulse_audio);
   struct pulse_config_s pulse_config = {0};
@@ -141,6 +176,12 @@ void ichabod_load_config(struct ichabod_s* pthis,
                          struct ichabod_config_s* config)
 {
   pthis->output_path = config->output_path;
+  if (!strncmp(pthis->output_path, "rtmp", 4)) {
+    printf("output path looks like an rtmp url. will attempt to stream\n");
+    pthis->use_streamer = 1;
+  } else {
+    pthis->use_streamer = 0;
+  }
 }
 
 
@@ -164,9 +205,11 @@ static void ichabod_main(void* p) {
         continue;
       }
       if (AVMEDIA_TYPE_VIDEO == media_type) {
-        file_writer_push_video_frame(pthis->file_writer, frame);
+        //file_writer_push_video_frame(pthis->file_writer, frame);
+        streamer_push_video(pthis->streamer, frame);
       } else if (AVMEDIA_TYPE_AUDIO == media_type) {
-        file_writer_push_audio_frame(pthis->file_writer, frame);
+        //file_writer_push_audio_frame(pthis->file_writer, frame);
+        streamer_push_audio(pthis->streamer, frame);
       }
       av_frame_free(&frame);
 
@@ -178,7 +221,11 @@ static void ichabod_main(void* p) {
   }
   printf("ichabod main complete\n");
   horseman_stop(pthis->horseman);
-  file_writer_close(pthis->file_writer);
+  if (pthis->use_streamer) {
+
+  } else {
+    file_writer_close(pthis->file_writer);
+  }
   pthis->is_running = 0;
 }
 
