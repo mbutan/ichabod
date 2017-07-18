@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		D414C52D1EE9143200D335C3 /* growing_file_audio_source.c in Sources */ = {isa = PBXBuildFile; fileRef = D414C52B1EE9143200D335C3 /* growing_file_audio_source.c */; };
 		D414C5301EE9E31600D335C3 /* audio_frame_converter.c in Sources */ = {isa = PBXBuildFile; fileRef = D414C52E1EE9E31600D335C3 /* audio_frame_converter.c */; };
-		D414FFAD1EEFCBCD00BD161C /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D448425C1EE0AE38005038E5 /* main.c */; };
 		D42EF7D51F06E8C5004D0C43 /* streamer.c in Sources */ = {isa = PBXBuildFile; fileRef = D42EF7D31F06E8C5004D0C43 /* streamer.c */; };
 		D44061871EE8799A00A3901A /* audio_mixer.cc in Sources */ = {isa = PBXBuildFile; fileRef = D44061851EE8799A00A3901A /* audio_mixer.cc */; };
 		D44842661EE0AEEF005038E5 /* libMagickWand-7.Q16HDRI.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842641EE0AEEF005038E5 /* libMagickWand-7.Q16HDRI.0.dylib */; };
@@ -29,6 +28,7 @@
 		D44842891EE1E323005038E5 /* yuv_rgb.c in Sources */ = {isa = PBXBuildFile; fileRef = D44842871EE1E323005038E5 /* yuv_rgb.c */; };
 		D4A2C7D11F01E33100C67449 /* pulse_audio_source.cc in Sources */ = {isa = PBXBuildFile; fileRef = D4A2C7CF1F01E33100C67449 /* pulse_audio_source.cc */; };
 		D4A2C7D31F01F7BC00C67449 /* libavdevice.57.1.100.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D4A2C7D21F01F7BC00C67449 /* libavdevice.57.1.100.dylib */; };
+		D4AEBD271F1DB117002AE233 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D448425C1EE0AE38005038E5 /* main.c */; };
 		D4DFAB001F02C85500ACA299 /* resampler.c in Sources */ = {isa = PBXBuildFile; fileRef = D4DFAAFE1F02C85500ACA299 /* resampler.c */; };
 		D4DFAB021F02D36E00ACA299 /* libswresample.2.3.100.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D4DFAB011F02D36E00ACA299 /* libswresample.2.3.100.dylib */; };
 		D4E025101EF34C340019A14E /* video_frame_buffer.cc in Sources */ = {isa = PBXBuildFile; fileRef = D4E0250E1EF34C340019A14E /* video_frame_buffer.cc */; };
@@ -252,9 +252,9 @@
 				D44842861EE1DFEA005038E5 /* base64.c in Sources */,
 				D4A2C7D11F01E33100C67449 /* pulse_audio_source.cc in Sources */,
 				D448427D1EE0B03E005038E5 /* frame_generator.c in Sources */,
+				D4AEBD271F1DB117002AE233 /* main.c in Sources */,
 				D44061871EE8799A00A3901A /* audio_mixer.cc in Sources */,
 				D4E025101EF34C340019A14E /* video_frame_buffer.cc in Sources */,
-				D414FFAD1EEFCBCD00BD161C /* main.c in Sources */,
 				D4E025131EF36BA40019A14E /* archive_mixer.cc in Sources */,
 				D4E025171EF3729D0019A14E /* ichabod.c in Sources */,
 				D448427A1EE0AFA6005038E5 /* file_writer.c in Sources */,

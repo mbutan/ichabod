@@ -21,7 +21,7 @@ struct frame_converter_config_s {
   int num_channels;
   int sample_rate;
   uint64_t channel_layout;
-  double pts_offset;
+  double ts_offset;
 };
 
 void frame_converter_create(struct frame_converter_s** converter_out,

@@ -154,7 +154,6 @@ int pulse_start(struct pulse_s* pthis) {
                             pthis->input_format, NULL);
   if (ret) {
     printf("failed to open input %s\n", pthis->input_format->name);
-    return ret;
   }
 
   ret = avformat_find_stream_info(pthis->format_context, NULL);
@@ -263,9 +262,13 @@ double pulse_get_initial_ts(struct pulse_s* pthis) {
   (double)pthis->stream->time_base.den;
 }
 
-double pulse_convert_frame_pts(struct pulse_s* pthis, AVFrame* frame) {
-  double pts = frame->pts;
+double pulse_convert_frame_pts(struct pulse_s* pthis, int64_t from_pts) {
+  double pts = from_pts;
   pts /= (double)pthis->stream->time_base.den;
   pts -= pulse_get_initial_ts(pthis);
   return pts;
+}
+
+AVRational pulse_get_time_base(struct pulse_s* pthis) {
+  return pthis->stream->time_base;
 }

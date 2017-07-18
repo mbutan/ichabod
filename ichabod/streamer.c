@@ -155,6 +155,8 @@ static int safe_write_packet(struct streamer_s* pthis,
 }
 
 int streamer_push_audio(struct streamer_s* pthis, AVFrame* frame) {
+  printf("streamer: push audio pts %lld\n", frame->pts);
+  
   int got_packet, ret;
   AVPacket pkt = { 0 };
   av_init_packet(&pkt);

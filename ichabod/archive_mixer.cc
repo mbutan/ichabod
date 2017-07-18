@@ -7,6 +7,7 @@
 
 extern "C" {
 
+#include <assert.h>
 #include <uv.h>
 #include "archive_mixer.h"
 #include "audio_mixer.h"
@@ -20,7 +21,8 @@ extern "C" {
 #include <string>
 
 struct archive_mixer_s {
-  double initial_timestamp;
+  double first_video_ts;
+  double first_audio_ts;
   double min_buffer_time;
   struct pulse_s* pulse_audio;
   struct audio_mixer_s* audio_mixer;
@@ -39,6 +41,7 @@ struct archive_mixer_s {
 
   size_t audio_size_estimated;
   size_t video_size_estimated;
+
 };
 
 #pragma mark - Private Utilities
@@ -88,13 +91,14 @@ static int frame_queue_pop_safe(struct archive_mixer_s* pthis,
     video_head = video_it->second;
     vhead_pts = video_it->second->pts;
     auto video_tail_it = pthis->video_frame_queue.rbegin();
-    vtail_pts = video_it->second->pts;
+    vtail_pts = video_tail_it->second->pts;
   }
   if (audio_head && video_head) {
     // articulate this comparison better: pts are presented in different units
     // so we need to rescale here before making a fair comparison.
     ret = (audio_head->pts < video_head->pts * 48) ? audio_head : video_head;
-  } else if (audio_head) {
+  }
+  else if (audio_head) {
     ret = audio_head;
   } else if (video_head) {
     ret = video_head;
@@ -146,6 +150,22 @@ static int get_audio_source(struct archive_mixer_s* pthis,
   return ret;
 }
 
+static void setup_audio(struct archive_mixer_s* pthis, AVFrame* frame) {
+  assert(pthis->first_audio_ts >= 0);
+
+  pthis->first_audio_ts =
+  (double)frame->pts / pulse_get_time_base(pthis->pulse_audio).den;
+
+  struct frame_converter_config_s converter_config;
+  converter_config.num_channels = pthis->audio_ctx_out->channels;
+  converter_config.output_format = pthis->audio_ctx_out->sample_fmt;
+  converter_config.sample_rate = pthis->audio_ctx_out->sample_rate;
+  converter_config.samples_per_frame = pthis->audio_ctx_out->frame_size;
+  converter_config.channel_layout = pthis->audio_ctx_out->channel_layout;
+  converter_config.ts_offset = pthis->first_audio_ts - pthis->first_video_ts;
+  frame_converter_create(&pthis->audio_frame_converter, &converter_config);
+}
+
 #pragma mark - Public API
 
 int archive_mixer_create(struct archive_mixer_s** mixer_out,
@@ -156,7 +176,7 @@ int archive_mixer_create(struct archive_mixer_s** mixer_out,
   pthis->audio_frame_queue = std::map<int64_t, AVFrame*>();
   pthis->video_frame_queue = std::map<int64_t, AVFrame*>();
   pthis->audio_sources = std::map<std::string, struct audio_source_s*>();
-  pthis->initial_timestamp = config->initial_timestamp;
+  pthis->first_video_ts = config->initial_timestamp;
   pthis->min_buffer_time = config->min_buffer_time;
   pthis->format_out = config->format_out;
   pthis->audio_ctx_out = config->audio_ctx_out;
@@ -169,16 +189,6 @@ int archive_mixer_create(struct archive_mixer_s** mixer_out,
   mixer_config.output_codec = config->audio_ctx_out;
   mixer_config.output_format = config->format_out;
   audio_mixer_load_config(pthis->audio_mixer, &mixer_config);
-
-
-  struct frame_converter_config_s converter_config;
-  converter_config.num_channels = pthis->audio_ctx_out->channels;
-  converter_config.output_format = pthis->audio_ctx_out->sample_fmt;
-  converter_config.sample_rate = pthis->audio_ctx_out->sample_rate;
-  converter_config.samples_per_frame = pthis->audio_ctx_out->frame_size;
-  converter_config.channel_layout = pthis->audio_ctx_out->channel_layout;
-  converter_config.pts_offset = 0;
-  frame_converter_create(&pthis->audio_frame_converter, &converter_config);
 
   double pts_interval =
   (double)config->video_ctx_out->time_base.den / config->video_fps_out;
@@ -200,6 +210,11 @@ void archive_mixer_drain_audio(struct archive_mixer_s* pthis) {
     if (ret) {
       continue;
     }
+    // this is the last time we'll see the original timestamp from pulse.
+    // use it to synchronize with video sources later.
+    if (!pthis->first_audio_ts) {
+      setup_audio(pthis, frame);
+    }
     frame_converter_consume(pthis->audio_frame_converter, frame);
     av_frame_free(&frame);
   }
@@ -218,7 +233,7 @@ void archive_mixer_drain_audio(struct archive_mixer_s* pthis) {
 void archive_mixer_consume_video(struct archive_mixer_s* pthis,
                                  AVFrame* frame, double timestamp)
 {
-  frame->pts = (timestamp - pthis->initial_timestamp);
+  frame->pts = (timestamp - (1000 * pthis->first_video_ts));
   frame_buffer_consume(pthis->video_buffer, frame);
   while (frame_buffer_has_next(pthis->video_buffer)) {
     int ret = frame_buffer_get_next(pthis->video_buffer, &frame);
@@ -240,8 +255,8 @@ void archive_mixer_consume_audio(struct archive_mixer_s* pthis,
     return;
   }
   double source_ts_offset =
-  audio_source_get_initial_timestamp(source) - pthis->initial_timestamp;
-  source_ts_offset -= 1000; // is there a capture delay somewhere?
+  audio_source_get_initial_timestamp(source) - pthis->first_video_ts;
+  //source_ts_offset -= 1000; // is there a capture delay somewhere?
   AVFrame* frame = NULL;
   while (!ret) {
     ret = audio_source_next_frame(source, &frame);
@@ -276,7 +291,11 @@ void archive_mixer_consume_audio(struct archive_mixer_s* pthis,
 char archive_mixer_has_next(struct archive_mixer_s* pthis) {
   char ret = 0;
   uv_mutex_lock(&pthis->queue_lock);
-  ret = !pthis->audio_frame_queue.empty() || !pthis->video_frame_queue.empty();
+  // ret = !pthis->audio_frame_queue.empty() || !pthis->video_frame_queue.empty();
+  // EXPERIMENT: buffer a bunch of data to try and relieve interleaving pressure
+  // on the RTMP output.
+  //ret = pthis->audio_frame_queue.size() > 100 && pthis->video_frame_queue.size() > 60;
+  ret = !pthis->audio_frame_queue.empty() && !pthis->video_frame_queue.empty();
   uv_mutex_unlock(&pthis->queue_lock);
   return ret;
 }

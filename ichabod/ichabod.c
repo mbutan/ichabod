@@ -118,7 +118,9 @@ static void on_video_msg(struct horseman_s* queue,
   // can run on a single thread without any hassle).
   uv_mutex_lock(&pthis->mixer_lock);
   if (!pthis->mixer) {
-    ret = build_mixer(pthis, frame, msg->timestamp);
+    ret = build_mixer(pthis, frame,
+                      /* hardcode time units from chrome screencast */
+                      msg->timestamp / 1000);
     assert(!ret);
   }
   archive_mixer_consume_video(pthis->mixer, frame, msg->timestamp);
@@ -205,11 +207,17 @@ static void ichabod_main(void* p) {
         continue;
       }
       if (AVMEDIA_TYPE_VIDEO == media_type) {
-        //file_writer_push_video_frame(pthis->file_writer, frame);
-        streamer_push_video(pthis->streamer, frame);
+        if (pthis->use_streamer) {
+          streamer_push_video(pthis->streamer, frame);
+        } else {
+          file_writer_push_video_frame(pthis->file_writer, frame);
+        }
       } else if (AVMEDIA_TYPE_AUDIO == media_type) {
-        //file_writer_push_audio_frame(pthis->file_writer, frame);
-        streamer_push_audio(pthis->streamer, frame);
+        if (pthis->use_streamer) {
+          streamer_push_audio(pthis->streamer, frame);
+        } else {
+          file_writer_push_audio_frame(pthis->file_writer, frame);
+        }
       }
       av_frame_free(&frame);
 
