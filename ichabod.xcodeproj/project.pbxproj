@@ -18,14 +18,14 @@
 		D448426E1EE0AF0C005038E5 /* libavfilter.6.65.100.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D448426A1EE0AF0C005038E5 /* libavfilter.6.65.100.dylib */; };
 		D448426F1EE0AF0C005038E5 /* libavformat.57.56.101.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D448426B1EE0AF0C005038E5 /* libavformat.57.56.101.dylib */; };
 		D44842721EE0AF2E005038E5 /* libzmq.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842701EE0AF2E005038E5 /* libzmq.5.dylib */; };
-		D44842731EE0AF2E005038E5 /* libuv.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842711EE0AF2E005038E5 /* libuv.1.dylib */; };
-		D44842761EE0AF5F005038E5 /* libopus.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842741EE0AF5F005038E5 /* libopus.0.dylib */; };
-		D44842771EE0AF5F005038E5 /* libx264.144.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D44842751EE0AF5F005038E5 /* libx264.144.dylib */; };
 		D448427A1EE0AFA6005038E5 /* file_writer.c in Sources */ = {isa = PBXBuildFile; fileRef = D44842781EE0AFA6005038E5 /* file_writer.c */; };
 		D448427D1EE0B03E005038E5 /* frame_generator.c in Sources */ = {isa = PBXBuildFile; fileRef = D448427B1EE0B03E005038E5 /* frame_generator.c */; };
 		D44842801EE0B094005038E5 /* horseman.c in Sources */ = {isa = PBXBuildFile; fileRef = D448427E1EE0B094005038E5 /* horseman.c */; };
 		D44842861EE1DFEA005038E5 /* base64.c in Sources */ = {isa = PBXBuildFile; fileRef = D44842841EE1DFEA005038E5 /* base64.c */; };
 		D44842891EE1E323005038E5 /* yuv_rgb.c in Sources */ = {isa = PBXBuildFile; fileRef = D44842871EE1E323005038E5 /* yuv_rgb.c */; };
+		D47D01FB1F2FDEB0006E2C30 /* libuv.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D47D01FA1F2FDEB0006E2C30 /* libuv.1.dylib */; };
+		D47D01FD1F2FDEB8006E2C30 /* libx264.148.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D47D01FC1F2FDEB8006E2C30 /* libx264.148.dylib */; };
+		D47D01FF1F2FDEC0006E2C30 /* libopus.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D47D01FE1F2FDEC0006E2C30 /* libopus.dylib */; };
 		D4A2C7D11F01E33100C67449 /* pulse_audio_source.cc in Sources */ = {isa = PBXBuildFile; fileRef = D4A2C7CF1F01E33100C67449 /* pulse_audio_source.cc */; };
 		D4A2C7D31F01F7BC00C67449 /* libavdevice.57.1.100.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D4A2C7D21F01F7BC00C67449 /* libavdevice.57.1.100.dylib */; };
 		D4AEBD271F1DB117002AE233 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D448425C1EE0AE38005038E5 /* main.c */; };
@@ -80,6 +80,9 @@
 		D44842851EE1DFEA005038E5 /* base64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = base64.h; sourceTree = "<group>"; };
 		D44842871EE1E323005038E5 /* yuv_rgb.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = yuv_rgb.c; sourceTree = "<group>"; };
 		D44842881EE1E323005038E5 /* yuv_rgb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = yuv_rgb.h; sourceTree = "<group>"; };
+		D47D01FA1F2FDEB0006E2C30 /* libuv.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libuv.1.dylib; path = ../../../../usr/local/lib/libuv.1.dylib; sourceTree = "<group>"; };
+		D47D01FC1F2FDEB8006E2C30 /* libx264.148.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libx264.148.dylib; path = ../../../../usr/local/lib/libx264.148.dylib; sourceTree = "<group>"; };
+		D47D01FE1F2FDEC0006E2C30 /* libopus.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopus.dylib; path = ../../../../usr/local/lib/libopus.dylib; sourceTree = "<group>"; };
 		D4A2C7CF1F01E33100C67449 /* pulse_audio_source.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pulse_audio_source.cc; sourceTree = "<group>"; };
 		D4A2C7D01F01E33100C67449 /* pulse_audio_source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pulse_audio_source.h; sourceTree = "<group>"; };
 		D4A2C7D21F01F7BC00C67449 /* libavdevice.57.1.100.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavdevice.57.1.100.dylib; path = ../../../../usr/local/lib/libavdevice.57.1.100.dylib; sourceTree = "<group>"; };
@@ -101,10 +104,10 @@
 			files = (
 				D4DFAB021F02D36E00ACA299 /* libswresample.2.3.100.dylib in Frameworks */,
 				D4A2C7D31F01F7BC00C67449 /* libavdevice.57.1.100.dylib in Frameworks */,
-				D44842761EE0AF5F005038E5 /* libopus.0.dylib in Frameworks */,
-				D44842771EE0AF5F005038E5 /* libx264.144.dylib in Frameworks */,
+				D47D01FF1F2FDEC0006E2C30 /* libopus.dylib in Frameworks */,
+				D47D01FD1F2FDEB8006E2C30 /* libx264.148.dylib in Frameworks */,
 				D44842721EE0AF2E005038E5 /* libzmq.5.dylib in Frameworks */,
-				D44842731EE0AF2E005038E5 /* libuv.1.dylib in Frameworks */,
+				D47D01FB1F2FDEB0006E2C30 /* libuv.1.dylib in Frameworks */,
 				D448426C1EE0AF0C005038E5 /* libavutil.55.34.101.dylib in Frameworks */,
 				D448426D1EE0AF0C005038E5 /* libpostproc.54.1.100.dylib in Frameworks */,
 				D448426E1EE0AF0C005038E5 /* libavfilter.6.65.100.dylib in Frameworks */,
@@ -174,6 +177,9 @@
 		D44842631EE0AEEE005038E5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				D47D01FE1F2FDEC0006E2C30 /* libopus.dylib */,
+				D47D01FC1F2FDEB8006E2C30 /* libx264.148.dylib */,
+				D47D01FA1F2FDEB0006E2C30 /* libuv.1.dylib */,
 				D4DFAB011F02D36E00ACA299 /* libswresample.2.3.100.dylib */,
 				D4A2C7D21F01F7BC00C67449 /* libavdevice.57.1.100.dylib */,
 				D44842741EE0AF5F005038E5 /* libopus.0.dylib */,
