@@ -197,7 +197,7 @@ static void ichabod_main(void* p) {
   struct ichabod_s* pthis = (struct ichabod_s*)p;
   horseman_start(pthis->horseman);
   int quiet_cycles = 0;
-  while (should_try_cycle(pthis) && quiet_cycles < 1000) {
+  while (should_try_cycle(pthis) && quiet_cycles < 3000) {
     while (pthis->mixer && archive_mixer_has_next(pthis->mixer)) {
       quiet_cycles = 0;
       AVFrame* frame = NULL;
