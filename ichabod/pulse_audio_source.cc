@@ -146,7 +146,8 @@ int pulse_start(struct pulse_s* pthis) {
   }
   // if developing on OSX: you'll need to find the right interface to capture
   // meaningful audio. use `pactl list sources` and put the interface number
-  // in that corresponds to your mic or loopback device
+  // in that corresponds to your mic or loopback device. just please don't
+  // commit that change :-)
 //  const char* input_device = "6";
   const char* input_device = "default";
 
@@ -154,6 +155,7 @@ int pulse_start(struct pulse_s* pthis) {
                             pthis->input_format, NULL);
   if (ret) {
     printf("failed to open input %s\n", pthis->input_format->name);
+    return ret;
   }
 
   ret = avformat_find_stream_info(pthis->format_context, NULL);
@@ -206,14 +208,14 @@ int pulse_start(struct pulse_s* pthis) {
 
   struct resampler_config_s config;
   config.channel_layout_in = pthis->codec_context->channel_layout;
-  //config.channel_layout_in = AV_CH_LAYOUT_STEREO;
-  config.channel_layout_out = AV_CH_LAYOUT_MONO;
+  config.channel_layout_in = AV_CH_LAYOUT_STEREO;
+  config.channel_layout_out = AV_CH_LAYOUT_STEREO;
   config.format_in = pthis->codec_context->sample_fmt;
   config.format_out = AV_SAMPLE_FMT_FLTP;
   config.sample_rate_in = pthis->codec_context->sample_rate;
   config.sample_rate_out = 48000;
   config.nb_channels_in = pthis->codec_context->channels;
-  config.nb_channels_out = 1;
+  config.nb_channels_out = 2;
   resampler_load_config(pthis->resampler, &config);
 
   uv_thread_create(&pthis->worker_thread, pulse_worker_main, pthis);

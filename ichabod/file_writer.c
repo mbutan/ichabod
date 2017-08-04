@@ -30,7 +30,7 @@ const int out_audio_format = AV_SAMPLE_FMT_FLTP;
 const int out_audio_num_channels = 1;
 
 const char *video_filter_descr = "null";
-const char *audio_filter_descr = "aresample=48000,aformat=sample_fmts=s16:channel_layouts=mono";
+const char *audio_filter_descr = "aresample=48000,aformat=sample_fmts=s16:channel_layouts=stereo";
 
 const AVRational global_time_base = { 1, 1000 };
 const int64_t out_sample_rate = 48000;
@@ -96,7 +96,7 @@ static int init_audio_filters(struct file_writer_t* file_writer,
     static enum AVSampleFormat out_sample_fmts[2];
     out_sample_fmts[0] = out_audio_format;
     out_sample_fmts[1] = -1;
-    static const int64_t out_channel_layouts[] = { AV_CH_LAYOUT_MONO, -1 };
+    static const int64_t out_channel_layouts[] = { AV_CH_LAYOUT_STEREO, -1 };
     static const int out_sample_rates[] = { 48000, -1 };
     const AVFilterLink *outlink;
     AVRational time_base = { 1, out_sample_rate };
@@ -439,14 +439,15 @@ static int open_output_file(struct file_writer_t* file_writer,
     file_writer->audio_stream->time_base.den = out_sample_rate;
 
     // Codec configuration
-    file_writer->audio_ctx_out->bit_rate = 96000;
+    file_writer->audio_ctx_out->bit_rate = 128000;
     file_writer->audio_ctx_out->sample_fmt = out_audio_format;
     file_writer->audio_ctx_out->sample_rate = out_sample_rate;
-    file_writer->audio_ctx_out->channels = 1;
-    file_writer->audio_ctx_out->channel_layout = AV_CH_LAYOUT_MONO;
+  file_writer->audio_ctx_out->channels = 2;
+    file_writer->audio_ctx_out->channel_layout = AV_CH_LAYOUT_STEREO;
 
     /* put sample parameters */
-    file_writer->video_ctx_out->qmin = 20;
+    file_writer->video_ctx_out->qmin = 18;
+    file_writer->video_ctx_out->qmax = 22;
     /* resolution must be a multiple of two */
     file_writer->video_ctx_out->width = file_writer->out_width;
     file_writer->video_ctx_out->height = file_writer->out_height;

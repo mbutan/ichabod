@@ -36,18 +36,6 @@ static int streamer_open(struct streamer_s* pthis) {
   pthis->video_context = pthis->video_stream->codec;
   pthis->audio_context = pthis->audio_stream->codec;
 
-//  pthis->audio_context = avcodec_alloc_context3(pthis->audio_codec);
-//  assert(pthis->audio_context);
-//  ret = avcodec_parameters_to_context(pthis->audio_context,
-//                                      pthis->audio_stream->codecpar);
-//  assert(!ret);
-//
-//  pthis->video_context = avcodec_alloc_context3(pthis->video_codec);
-//  assert(pthis->video_context);
-//  ret = avcodec_parameters_to_context(pthis->video_context,
-//                                      pthis->video_stream->codecpar);
-//  assert(!ret);
-
   ret = av_opt_set_int(pthis->audio_context, "refcounted_frames", 1, 0);
   ret = av_opt_set_int(pthis->video_context, "refcounted_frames", 1, 0);
 
@@ -55,11 +43,12 @@ static int streamer_open(struct streamer_s* pthis) {
   pthis->audio_context->bit_rate = 96000;
   pthis->audio_context->sample_fmt = AV_SAMPLE_FMT_FLTP;
   pthis->audio_context->sample_rate = 48000;
-  pthis->audio_context->channels = 1;
-  pthis->audio_context->channel_layout = AV_CH_LAYOUT_MONO;
+  pthis->audio_context->channels = 2;
+  pthis->audio_context->channel_layout = AV_CH_LAYOUT_STEREO;
 
   // configure video codec
-  pthis->video_context->qmin = 20;
+  pthis->video_context->qmin = 18;
+  pthis->video_context->qmin = 22;
   /* resolution must be a multiple of two */
   pthis->video_context->width = pthis->width;
   pthis->video_context->height = pthis->height;
@@ -68,7 +57,9 @@ static int streamer_open(struct streamer_s* pthis) {
   pthis->video_context->time_base.den = 1000;
 
   av_opt_set(pthis->video_context->priv_data, "preset", "veryfast", 0);
-
+  // TODO: RTMP streaming should probably compute a constant bitrate rather than
+  // relying on a qp range.
+  
   if (pthis->format_context->oformat->flags & AVFMT_GLOBALHEADER) {
     pthis->video_context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     pthis->audio_context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;

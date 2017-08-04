@@ -217,7 +217,7 @@ int horseman_alloc(struct horseman_s** queue) {
   uv_cpu_info_t* cpu_infos;
   int cpu_count;
   uv_cpu_info(&cpu_infos, &cpu_count);
-  cpu_count = fmax(1, cpu_count - 2);
+  cpu_count = fmax(1, cpu_count - 1);
   char str[4];
   sprintf(str, "%d", cpu_count);
   uv_free_cpu_info(cpu_infos, cpu_count);
