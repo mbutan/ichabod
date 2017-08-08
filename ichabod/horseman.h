@@ -41,6 +41,4 @@ void horseman_free(struct horseman_s* queue);
 int horseman_start(struct horseman_s* queue);
 int horseman_stop(struct horseman_s* queue);
 
-int64_t horseman_get_quiet_cycles(struct horseman_s* queue);
-
 #endif /* horseman_h */

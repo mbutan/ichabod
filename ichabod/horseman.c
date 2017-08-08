@@ -6,6 +6,7 @@
 //
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <zmq.h>
 #include <uv.h>
 #include <assert.h>
@@ -23,8 +24,9 @@ struct horseman_s {
   char is_interrupted;
   uv_thread_t zmq_thread;
   
-  uv_mutex_t lock;
-  int64_t quiet_cycles;
+  // Atomic integer counts active jobs queued to uv loop
+  uv_mutex_t work_lock;
+  int64_t work_count;
 
   void (*on_video_msg)(struct horseman_s* queue,
                        struct horseman_msg_s* msg, void* p);
@@ -47,16 +49,24 @@ static void horseman_loop_main(void* p) {
   printf("horseman: exiting worker loop\n");
 }
 
-void reset_quiet_counter(struct horseman_s* pthis) {
-  uv_mutex_lock(&pthis->lock);
-  pthis->quiet_cycles = 0;
-  uv_mutex_unlock(&pthis->lock);
+void decrement_work_count(struct horseman_s* pthis) {
+  uv_mutex_lock(&pthis->work_lock);
+  pthis->work_count = 0;
+  uv_mutex_unlock(&pthis->work_lock);
 }
 
-void increment_quiet_counter(struct horseman_s* pthis) {
-  uv_mutex_lock(&pthis->lock);
-  pthis->quiet_cycles++;
-  uv_mutex_unlock(&pthis->lock);
+void increment_work_count(struct horseman_s* pthis) {
+  uv_mutex_lock(&pthis->work_lock);
+  pthis->work_count++;
+  uv_mutex_unlock(&pthis->work_lock);
+}
+
+int64_t get_work_count(struct horseman_s* pthis) {
+  int64_t ret = 0;
+  uv_mutex_lock(&pthis->work_lock);
+  ret = pthis->work_count;
+  uv_mutex_unlock(&pthis->work_lock);
+  return ret;
 }
 
 static void horseman_msg_free(struct horseman_msg_s* msg) {
@@ -129,6 +139,7 @@ static void dispatch_video_msg(uv_work_t* work) {
 
 static void after_video_msg(uv_work_t* work, int status) {
   struct msg_dispatch_s* msg = (struct msg_dispatch_s*) work->data;
+  decrement_work_count(msg->horseman);
   horseman_msg_free(msg->msg);
   free(msg);
 }
@@ -149,8 +160,13 @@ static int receive_screencast(struct horseman_s* pthis, char* got_message) {
     async_msg->msg = msg;
     async_msg->horseman = pthis;
     async_msg->work.data = async_msg;
+    increment_work_count(pthis);
     ret = uv_queue_work(pthis->loop, &async_msg->work,
                         dispatch_video_msg, after_video_msg);
+    if (ret) {
+      // job rejected. don't wait for after_msg to fire
+      decrement_work_count(pthis);
+    }
   }
   return ret;
 }
@@ -187,11 +203,6 @@ static void horseman_zmq_main(void* p) {
     ret = receive_screencast(pthis, &got_screencast);
     char got_blobsink = 0;
     ret = receive_blobsink(pthis, &got_blobsink);
-    if (got_screencast || got_blobsink) {
-      reset_quiet_counter(pthis);
-    } else {
-      increment_quiet_counter(pthis);
-    }
   }
   zmq_close(pthis->screencast_socket);
   zmq_close(pthis->blobsink_socket);
@@ -211,7 +222,7 @@ int horseman_alloc(struct horseman_s** queue) {
   pthis->zmq_ctx = zmq_ctx_new();
   pthis->screencast_socket = zmq_socket(pthis->zmq_ctx, ZMQ_PULL);
   pthis->blobsink_socket = zmq_socket(pthis->zmq_ctx, ZMQ_PULL);
-  uv_mutex_init(&pthis->lock);
+  uv_mutex_init(&pthis->work_lock);
 
   // shape the thread pool a bit
   uv_cpu_info_t* cpu_infos;
@@ -237,7 +248,7 @@ void horseman_free(struct horseman_s* pthis) {
   free(pthis->loop);
   uv_thread_join(&pthis->zmq_thread);
   zmq_ctx_destroy(pthis->zmq_ctx);
-  uv_mutex_destroy(&pthis->lock);
+  uv_mutex_destroy(&pthis->work_lock);
   free(pthis);
 }
 
@@ -253,18 +264,18 @@ int horseman_stop(struct horseman_s* pthis) {
   int ret;
   pthis->is_interrupted = 1;
   pthis->is_running = 0;
+  int drain_count = 0;
+  // drain the work queue before calling uv_loop_close.
+  // don't wait for more than a second.
+  // _loop_close will crash if there are executing jobs, but at this point
+  // there's not much we can do about it
+  while(get_work_count(pthis) > 0 && drain_count < 1000) {
+    usleep(1000);
+  }
   do {
     ret = uv_loop_close(pthis->loop);
   } while (UV_EBUSY == ret);
   ret = uv_thread_join(&pthis->zmq_thread);
   int get = uv_thread_join(&pthis->loop_thread);
   return ret | get;
-}
-
-int64_t horseman_get_quiet_cycles(struct horseman_s* pthis) {
-  int64_t ret = 0;
-  uv_mutex_lock(&pthis->lock);
-  ret = pthis->quiet_cycles;
-  uv_mutex_unlock(&pthis->lock);
-  return ret;
 }
