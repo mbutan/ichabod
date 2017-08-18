@@ -227,8 +227,9 @@ static void ichabod_main(void* p) {
     quiet_cycles++;
     usleep(10000);
   }
-  printf("ichabod main complete\n");
   horseman_stop(pthis->horseman);
+  pulse_stop(pthis->pulse_audio);
+  printf("ichabod main complete\n");
   if (pthis->use_streamer) {
     printf("streaming output complete");
   } else {
