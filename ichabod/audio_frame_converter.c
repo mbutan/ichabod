@@ -49,6 +49,7 @@ int frame_converter_consume(struct frame_converter_s* pthis, AVFrame* frame) {
   if(frame->pts < pthis->ts_in) {
     printf("WTF: consuming frame pts %lld last ts in: %f\n",
            frame->pts, pthis->ts_in);
+    return -1;
   }
   assert(frame->format == pthis->format);
   pthis->ts_in = frame->pts;

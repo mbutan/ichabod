@@ -72,8 +72,9 @@ static int pulse_worker_read_frame(struct pulse_s* pthis, AVFrame** frame_out) {
 
       if (got_frame) {
         frame->pts = av_frame_get_best_effort_timestamp(frame);
-        printf("audio source: extracted %lld (diff %lld)\n",
-               frame->pts, frame->pts - pthis->last_pts_read);
+        printf("audio source: extracted %lld (diff %lld) n=%d\n",
+               frame->pts, frame->pts - pthis->last_pts_read,
+               frame->nb_samples);
         pthis->last_pts_read = frame->pts;
         *frame_out = frame;
       }
