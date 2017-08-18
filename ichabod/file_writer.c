@@ -457,7 +457,7 @@ static int open_output_file(struct file_writer_t* file_writer,
 
     if (fmt->video_codec == AV_CODEC_ID_H264) {
         av_opt_set(file_writer->video_ctx_out->priv_data,
-                   "preset", "veryfast", 0);
+                   "preset", "ultrafast", 0);
     }
 
     /* Some formats want stream headers to be separate. */

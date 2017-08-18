@@ -56,7 +56,7 @@ static int streamer_open(struct streamer_s* pthis) {
   pthis->video_context->time_base.num = 1;
   pthis->video_context->time_base.den = 1000;
 
-  av_opt_set(pthis->video_context->priv_data, "preset", "veryfast", 0);
+  av_opt_set(pthis->video_context->priv_data, "preset", "ultrafast", 0);
   // TODO: RTMP streaming should probably compute a constant bitrate rather than
   // relying on a qp range.
   
