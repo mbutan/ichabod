@@ -230,9 +230,10 @@ static void ichabod_main(void* p) {
   printf("ichabod main complete\n");
   horseman_stop(pthis->horseman);
   if (pthis->use_streamer) {
-
+    printf("streaming output complete");
   } else {
     file_writer_close(pthis->file_writer);
+    printf("trailer written");
   }
   pthis->is_running = 0;
 }
