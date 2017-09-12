@@ -27,9 +27,6 @@ struct horseman_config_s {
   void (*on_video_msg)(struct horseman_s* queue,
                        struct horseman_msg_s* msg,
                        void* p);
-  void (*on_audio_msg)(struct horseman_s* queue,
-                       struct horseman_msg_s* msg,
-                       void* p);
   void* p;
 };
 

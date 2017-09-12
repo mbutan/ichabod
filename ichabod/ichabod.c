@@ -127,14 +127,6 @@ static void on_video_msg(struct horseman_s* queue,
   uv_mutex_unlock(&pthis->mixer_lock);
 }
 
-static void on_audio_msg(struct horseman_s* queue,
-                         struct horseman_msg_s* msg, void* p)
-{
-  struct ichabod_s* pthis = (struct ichabod_s*)p;
-  archive_mixer_consume_audio(pthis->mixer, msg->sz_data,
-                              msg->timestamp, msg->sz_sid);
-}
-
 void ichabod_initialize() {
   av_register_all();
   avformat_network_init();
@@ -149,7 +141,6 @@ void ichabod_alloc(struct ichabod_s** pout) {
   file_writer_alloc(&pthis->file_writer);
   horseman_alloc(&pthis->horseman);
   struct horseman_config_s horseman_config;
-  horseman_config.on_audio_msg = on_audio_msg;
   horseman_config.on_video_msg = on_video_msg;
   horseman_config.p = pthis;
   horseman_load_config(pthis->horseman, &horseman_config);

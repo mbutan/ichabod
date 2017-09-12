@@ -215,7 +215,8 @@ void archive_mixer_drain_audio(struct archive_mixer_s* pthis) {
     if (!pthis->first_audio_ts) {
       setup_audio(pthis, frame);
     }
-    frame_converter_consume(pthis->audio_frame_converter, frame);
+    double frame_ts = pulse_convert_frame_pts(pthis->pulse_audio, frame->pts);
+    frame_converter_consume(pthis->audio_frame_converter, frame, frame_ts);
     av_frame_free(&frame);
   }
 
@@ -243,59 +244,17 @@ void archive_mixer_consume_video(struct archive_mixer_s* pthis,
   }
 }
 
-void archive_mixer_consume_audio(struct archive_mixer_s* pthis,
-                                 const char* file_path, double timestamp,
-                                 const char* subscriber_id)
-{
-  struct audio_source_s* source = NULL;
-  int ret = get_audio_source(pthis, subscriber_id,
-                             file_path, timestamp, &source);
-  if (ret || !source) {
-    printf("unable to get audio source %s\n", subscriber_id);
-    return;
-  }
-  double source_ts_offset =
-  audio_source_get_initial_timestamp(source) - pthis->first_video_ts;
-  //source_ts_offset -= 1000; // is there a capture delay somewhere?
-  AVFrame* frame = NULL;
-  while (!ret) {
-    ret = audio_source_next_frame(source, &frame);
-    if (frame) {
-      frame->pts += source_ts_offset;
-      audio_mixer_consume(pthis->audio_mixer, frame);
-      av_frame_free(&frame);
-    }
-  }
-  int64_t mixer_ts = 0;
-  while (audio_mixer_get_length(pthis->audio_mixer) >
-         pthis->min_buffer_time * 1000)
-  {
-    ret = audio_mixer_get_next(pthis->audio_mixer, &frame);
-    if (frame && !ret) {
-      frame_converter_consume(pthis->audio_frame_converter, frame);
-    }
-    mixer_ts = audio_mixer_get_head_ts(pthis->audio_mixer);
-  }
-
-  // finally, pull from frame converter into audio queue
-  frame = NULL;
-  ret = frame_converter_get_next(pthis->audio_frame_converter, &frame);
-  while (!ret) {
-    if (frame) {
-      audio_frame_queue_push_safe(pthis, frame);
-    }
-    ret = frame_converter_get_next(pthis->audio_frame_converter, &frame);
-  }
-}
-
 char archive_mixer_has_next(struct archive_mixer_s* pthis) {
   char ret = 0;
   uv_mutex_lock(&pthis->queue_lock);
-  // ret = !pthis->audio_frame_queue.empty() || !pthis->video_frame_queue.empty();
+  // Pop any and all data in the mixer.
+  ret = !pthis->audio_frame_queue.empty() || !pthis->video_frame_queue.empty();
+  // Don't pop until both queues are populated
+  //ret = !pthis->audio_frame_queue.empty() && !pthis->video_frame_queue.empty();
+  
   // EXPERIMENT: buffer a bunch of data to try and relieve interleaving pressure
   // on the RTMP output.
   //ret = pthis->audio_frame_queue.size() > 100 && pthis->video_frame_queue.size() > 60;
-  ret = !pthis->audio_frame_queue.empty() && !pthis->video_frame_queue.empty();
   uv_mutex_unlock(&pthis->queue_lock);
   return ret;
 }

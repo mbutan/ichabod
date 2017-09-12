@@ -30,8 +30,6 @@ struct horseman_s {
 
   void (*on_video_msg)(struct horseman_s* queue,
                        struct horseman_msg_s* msg, void* p);
-  void (*on_audio_msg)(struct horseman_s* queue,
-                       struct horseman_msg_s* msg, void* p);
   void* callback_p;
 
   // Separate runloop for dispatching callbacks.
@@ -171,20 +169,6 @@ static int receive_screencast(struct horseman_s* pthis, char* got_message) {
   return ret;
 }
 
-static int receive_blobsink(struct horseman_s* pthis, char* got_message) {
-  struct horseman_msg_s* msg = calloc(1, sizeof(struct horseman_msg_s));
-  int ret = receive_message(pthis->blobsink_socket, msg, got_message);
-  if (ret) {
-    printf("receive_blobsink: %d %d\n", ret, errno);
-  } else if (*got_message) {
-    printf("received blob len=%ld ts=%f sid=%s\n",
-           strlen(msg->sz_data), msg->timestamp, msg->sz_sid);
-    pthis->on_audio_msg(pthis, msg, pthis->callback_p);
-  }
-  horseman_msg_free(msg);
-  return ret;
-}
-
 static void horseman_zmq_main(void* p) {
   int ret;
   printf("media queue is online %p\n", p);
@@ -201,8 +185,6 @@ static void horseman_zmq_main(void* p) {
   while (!pthis->is_interrupted) {
     char got_screencast = 0;
     ret = receive_screencast(pthis, &got_screencast);
-    char got_blobsink = 0;
-    ret = receive_blobsink(pthis, &got_blobsink);
   }
   zmq_close(pthis->screencast_socket);
   zmq_close(pthis->blobsink_socket);
@@ -212,7 +194,6 @@ void horseman_load_config(struct horseman_s* pthis,
                              struct horseman_config_s* config)
 {
   pthis->on_video_msg = config->on_video_msg;
-  pthis->on_audio_msg = config->on_audio_msg;
   pthis->callback_p = config->p;
 }
 

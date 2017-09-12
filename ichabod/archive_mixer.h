@@ -43,9 +43,6 @@ void archive_mixer_free(struct archive_mixer_s* mixer);
 void archive_mixer_drain_audio(struct archive_mixer_s* mixer);
 void archive_mixer_consume_video(struct archive_mixer_s* mixer,
                                  AVFrame* frame, double timestamp);
-void archive_mixer_consume_audio(struct archive_mixer_s* mixer,
-                                 const char* file_path, double timestamp,
-                                 const char* subscriber_id);
 char archive_mixer_has_next(struct archive_mixer_s* mixer);
 int archive_mixer_get_next(struct archive_mixer_s* mixer, AVFrame** frame_out,
                            enum AVMediaType* media_type);

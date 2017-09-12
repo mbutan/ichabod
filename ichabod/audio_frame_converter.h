@@ -28,8 +28,11 @@ void frame_converter_create(struct frame_converter_s** converter_out,
                             struct frame_converter_config_s* config);
 void frame_converter_free(struct frame_converter_s* converter);
 
+/**
+ * @param ts frame timestamp in seconds. used for wallclock adjustments
+ */
 int frame_converter_consume(struct frame_converter_s* converter,
-                            AVFrame* frame);
+                            AVFrame* frame, double ts);
 int frame_converter_get_next(struct frame_converter_s* converter,
                              AVFrame** frame_out);
 

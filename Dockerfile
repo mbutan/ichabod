@@ -10,7 +10,7 @@ pkg-config curl libcurl4-gnutls-dev libpulse-dev pulseaudio alsa-utils \
 ca-certificates && \
 curl -O https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
 dpkg -i google-chrome-stable_current_amd64.deb; apt-get -fy install && \
-curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
+curl -sL https://deb.nodesource.com/setup_8.x | bash - && \
 apt-get install nodejs && rm -rf /var/lib/apt/lists/*
 
 # Create app directory
